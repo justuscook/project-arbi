@@ -163,22 +163,27 @@ export async function execute(interaction) {
                     interaction.user.id = userToDM.id;
                     interaction.channel.id = await (await userToDM.createDM()).id
                     await util.buttonPagination(userToDM.id, commandMessage as Message, embeds);
-                    await interaction.followUp({ content: `I am sending the guide(s) to ${userMention(userToDM.id)}\'s DM\'s!` })
+                    const guidesDMed = await interaction.followUp(`I am sending the guide(s) to ${userMention(userToDM.id)}\'s DM\'s!`)
+                    util.delayDeteleMessage(guidesDMed);
                     return;
                 }
                 else if (canShowInServerOrDM && showInServer === true) {
                     const commandMessage = await interaction.followUp({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1, row2] });
                     await util.buttonPagination(interaction.user.id, commandMessage as Message, embeds);
+                    util.delayDeteleMessage(commandMessage)
                     return;
                 }
                 else {
                     if (userToDM !== null) {
-                        interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
+                        const cantDM = await interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
+                        util.delayDeteleMessage(cantDM);
                         return;
                     }
                     const dmAlert = await interaction.followUp({ content: `${userMention(interaction.user.id)}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`, components: [inbox] });
                     const commandMessage = await interaction.user.send({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1, row2] });
                     await util.buttonPagination(interaction.user.id, commandMessage as Message, embeds);
+                    util.delayDeteleMessage(commandMessage)
+                    util.delayDeteleMessage(dmAlert, 15 * 1000)
                     return;
                 }
             }
@@ -188,22 +193,27 @@ export async function execute(interaction) {
                     interaction.user.id = userToDM.id;
                     interaction.channel.id = await (await userToDM.createDM()).id
                     await util.buttonPagination(userToDM.id, commandMessage as Message, embeds);
-                    await interaction.followUp({ content: `I am sending the guide(s) to ${userMention(userToDM.id)}\'s DM\'s!` })
+                    const guidesDMed = await interaction.followUp({ content: util.simpleEmbed(`I am sending the guide(s) to ${userMention(userToDM.id)}\'s DM\'s!`) })
+                    util.delayDeteleMessage(guidesDMed, 15 * 1000);
                     return;
                 }
-                else if (canShowInServerOrDM  && showInServer === true) {
+                else if (canShowInServerOrDM && showInServer === true) {
                     const commandMessage = await interaction.followUp({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1] });
                     await util.buttonPagination(interaction.user.id, commandMessage as Message, embeds);
+                    util.delayDeteleMessage(commandMessage)
                     return;
                 }
                 else {
                     if (userToDM !== null) {
-                        interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
+                        const cantDM = await interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
+                        util.delayDeteleMessage(cantDM);
                         return;
                     }
                     const dmAlert = await interaction.followUp({ content: `${userMention(interaction.user.id)}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`, components: [inbox] });
                     const commandMessage = await interaction.user.send({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1] });
                     await util.buttonPagination(interaction.user.id, commandMessage as Message, embeds);
+                    util.delayDeteleMessage(commandMessage);
+                    util.delayDeteleMessage(dmAlert, 15 * 1000);
                     return;
                 }
             }

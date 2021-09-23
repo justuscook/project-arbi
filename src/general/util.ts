@@ -191,3 +191,19 @@ export function removeShow(text: string): string{
     text = text.toLowerCase();
     return text.replace('show','');
 }
+
+
+export function delayDeteleMessage(message: Message, time?: number){
+    if(!time) time = Timeout.Mins15;
+    setTimeout( async() => {
+        await message.delete();
+    },time)    
+}
+
+export function simpleEmbed(text: string): Embed {
+    const embed: Embed = new Embed({
+        description: text,        
+        color: EmbedColor.YELLOW
+    })
+    return embed;
+}

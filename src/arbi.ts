@@ -39,7 +39,7 @@ client.on('interactionCreate', async interaction => {
 client.login(token);
 
 async function deployCommands() {
-    const server = TestServer;//
+    const server = TestServer;//TestServer or Raid Server
     const commands = [];
     const commandFiles = fs.readdirSync(__dirname + '/commands').filter(file => file.endsWith('.js'));
 
@@ -53,13 +53,28 @@ async function deployCommands() {
     (async () => {
         try {
             const response = await rest.put(
-                Routes.applicationGuildCommands(clientId, server),
+                Routes.applicationGuildCommands(clientId, RaidServer),
                 { body: commands },
             );
 
             if (!client.application?.owner) await client.application?.fetch();
             for (const r of response) {
-                const command = await client.guilds.cache.get(server)?.commands.fetch(r.id);
+                const command = await client.guilds.cache.get(RaidServer)?.commands.fetch(r.id);
+                const commandFile = require(__dirname + `/commands/${r.name}`);
+                if (command.defaultPermission === false) {
+                    const permissions = commandFile.permissions
+                    await command.permissions.set({ permissions });
+                }
+            }
+
+            const response2 = await rest.put(
+                Routes.applicationGuildCommands(clientId, TestServer),
+                { body: commands },
+            );
+
+            if (!client.application?.owner) await client.application?.fetch();
+            for (const r of response2) {
+                const command = await client.guilds.cache.get(TestServer)?.commands.fetch(r.id);
                 const commandFile = require(__dirname + `/commands/${r.name}`);
                 if (command.defaultPermission === false) {
                     const permissions = commandFile.permissions
