@@ -1,4 +1,4 @@
-import { Client, Collection, CommandInteraction, GuildMemberRoleManager, Message, MessageAttachment, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, Util } from "discord.js";
+import { Client, Collection, CommandInteraction, GuildMemberRoleManager, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, User, Util } from "discord.js";
 import { google } from 'googleapis';
 import { Storage } from '@google-cloud/storage';
 import path from 'path';
@@ -104,9 +104,9 @@ export function fuzzySearch(data: any[], filter: any, searchType: string[]) {
         return bestMatch;
     }
     else {
-        const fuzzy2 = new Fuse(data, {
+        const fuzzy3 = new Fuse(data, {
             keys: searchType,
-            threshold: .3,
+            threshold: .35,
             shouldSort: true,
             findAllMatches: false,
             isCaseSensitive: false,
@@ -114,8 +114,8 @@ export function fuzzySearch(data: any[], filter: any, searchType: string[]) {
             includeScore: true,
             ignoreLocation: true
         });
-        const result2 = fuzzy2.search(filter);
-        bestMatch = result2.map((x: { item: any; }) => x.item);
+        const result3 = fuzzy3.search(filter);
+        bestMatch = result3.map((x: { item: any; }) => x.item);
     }
     return bestMatch;
 }
@@ -206,4 +206,15 @@ export function simpleEmbed(text: string): Embed {
         color: EmbedColor.YELLOW
     })
     return embed;
+}
+
+export async function inboxLinkButton(user: User): Promise<MessageActionRow> {
+    const inbox = new MessageActionRow()
+    .addComponents(
+        new MessageButton()
+            .setLabel('Inbox')
+            .setStyle('LINK')
+            .setURL(`https://discord.com/channels/@me/${await (await user.createDM()).id}`)
+    );
+    return inbox;
 }
