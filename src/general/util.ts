@@ -218,3 +218,17 @@ export async function inboxLinkButton(user: User): Promise<MessageActionRow> {
     );
     return inbox;
 }
+
+import { distance } from 'fastest-levenshtein';
+
+export function matchStrength(target: string, match: string): number {
+  if (target.length === 0 || match.length === 0) {
+    return 0;
+  }
+  const d = distance(target.toLocaleLowerCase(), match.toLocaleLowerCase());
+  return (match.length - (d - Math.max(0, target.length - match.length))) / match.length;  
+}
+
+export function getSortedResults(someStringArray: string[], queryString: string) {
+    return someStringArray.sort((a,b)=>matchStrength(a, queryString) - matchStrength(b, queryString));
+}
