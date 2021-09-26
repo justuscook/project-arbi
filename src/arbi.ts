@@ -74,6 +74,7 @@ async function deployCommands() {
 
             if (!client.application?.owner) await client.application?.fetch();
             for (const r of response2) {
+                console.log()
                 const command = await client.guilds.cache.get(TestServer)?.commands.fetch(r.id);
                 const commandFile = require(__dirname + `/commands/${r.name}`);
                 if (command.defaultPermission === false) {
