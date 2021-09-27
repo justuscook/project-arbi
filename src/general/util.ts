@@ -123,28 +123,27 @@ export function fuzzySearch(data: any[], filter: any, searchType: string[]) {
 
 export async function getMessageAttacment(image: string): Promise<MessageAttachment | undefined> {
     let imageDownload;
-    try {
-        if (image !== undefined) {
-            if (image.includes('open?id')) {
-                imageDownload = await drive.files.get({
-                    fileId: image.substr(image.indexOf('=') + 1, image.length - image.indexOf('=')),
-                    auth: await getAuthToken(),
-                    alt: 'media'
-                }, { responseType: 'arraybuffer' });
-            }
-            else {
-                imageDownload = await Axios({
-                    url: image,
-                    method: 'GET',
-                    responseType: 'arraybuffer'
-                });
-            }
-            const id = uuidv1();
+    const id = uuidv1();
+    if (image !== undefined) {
+        if (image.includes('open?id')) {
+            imageDownload = await drive.files.get({
+                fileId: image.substr(image.indexOf('=') + 1, image.length - image.indexOf('=')),
+                auth: await getAuthToken(),
+                alt: 'media'
+            }, {
+                responseType:
+                    'text'
+            });            
             return new MessageAttachment(Buffer.from(imageDownload.data), `${id}.png`);
         }
-    }
-    catch{
-        console.log(imageDownload)
+        else {
+            imageDownload = await Axios({
+                url: image,
+                method: 'GET',
+                responseType: 'arraybuffer'
+            });
+            return new MessageAttachment(imageDownload.data, `${id}.png`);
+        }
     }
     return undefined;
 }

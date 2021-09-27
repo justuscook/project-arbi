@@ -159,7 +159,7 @@ export async function execute(interaction) {
                     )
                 };
                 if (userToDM !== null && canShowInServerOrDM) {
-                    const commandMessage = await userToDM.send({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1, row2] });
+                    const commandMessage = await userToDM.send({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage,embeds[0].botImage ], components: [row1, row2] });
                     interaction.user.id = userToDM.id;
                     interaction.channel.id = await (await userToDM.createDM()).id
                     await util.buttonPagination(userToDM.id, commandMessage as Message, embeds);
