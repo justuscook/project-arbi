@@ -4,7 +4,7 @@ import exp from 'constants';
 import { ApplicationCommandPermissionData, BufferResolvable, ButtonInteraction, CommandInteraction, DiscordAPIError, GuildChannel, GuildMember, GuildMemberRoleManager, Interaction, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, MessageSelectMenu, MessageSelectMenuOptions, TextChannel, User } from 'discord.js';
 import { EmbedColor, IMessageEmbeds } from '../general/util'
 import * as util from '../general/util';
-import google, { GoogleApis } from 'googleapis';
+import google from 'googleapis';
 import { rawListeners } from 'process';
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
@@ -91,7 +91,7 @@ export async function execute(interaction) {
             });
             guides = guides.filter(x => x.aprroved === 'TRUE');
 
-            const found: util.IGuide[] = util.fuzzySearch(guides, input, ['champion']);
+            const found: util.IGuide[] = util.fuzzySearch(guides, input, ['champion','title']);
             if (found.length === 0) {
                 await interaction.followUp(`There are no guides for ${bold(input)} yet!`);
                 return;
@@ -109,7 +109,7 @@ export async function execute(interaction) {
                     .setImage(`attachment://${midImage.name}`);
                 let botEmbed = new MessageEmbed();
                 let botImage;
-                if (f.botImage !== null) {
+                if (f.botImage !== undefined) {
                     botImage = await util.getMessageAttacment(f.botImage);
                     botEmbed = new MessageEmbed()
                         .setDescription(f.botSlide)

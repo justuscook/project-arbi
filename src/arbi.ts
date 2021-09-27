@@ -1,12 +1,10 @@
-import { SlashCommandBuilder, SlashCommandSubcommandGroupBuilder } from '@discordjs/builders';
-import { ApplicationCommand, CommandInteraction } from 'discord.js';
+import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, Intents, ApplicationCommandResolvable } from 'discord.js';
 import fs from 'fs';
-const { Client, Collection, Intents } = require('discord.js');
 const { clientId, RaidServer, TestServer, token } = require('./config.json');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+const client: any = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
 client.commands = new Collection();
 const commandFiles = fs.readdirSync(__dirname + '/commands').filter(file => file.endsWith('.js'));
@@ -38,6 +36,7 @@ client.on('interactionCreate', async interaction => {
 
 client.login(token);
 
+
 async function deployCommands() {
     const server = TestServer;//TestServer or Raid Server
     const commands = [];
@@ -49,7 +48,19 @@ async function deployCommands() {
     }
 
     const rest = new REST({ version: '9' }).setToken(token);
-
+    /*
+        const guilds: Collection<Snowflake, OAuth2Guild> = await client.guilds.fetch();
+        for(const g of guilds){
+            const guild: Guild = await client.guilds.fetch(g[0])
+            const commands = await guild.commands.fetch();
+            const commandToDelete = commands.find(x => x.name === 'ping');
+            await guild.commands.delete(commandToDelete.id);
+        }
+        
+        if(currentCommands !== undefined){
+            console.log(currentCommands)
+        }
+    */
     (async () => {
         try {
             const response = await rest.put(
@@ -74,7 +85,6 @@ async function deployCommands() {
 
             if (!client.application?.owner) await client.application?.fetch();
             for (const r of response2) {
-                console.log()
                 const command = await client.guilds.cache.get(TestServer)?.commands.fetch(r.id);
                 const commandFile = require(__dirname + `/commands/${r.name}`);
                 if (command.defaultPermission === false) {
@@ -82,6 +92,7 @@ async function deployCommands() {
                     await command.permissions.set({ permissions });
                 }
             }
+            //console.log(response2)
             console.log('Successfully registered application commands.');
         } catch (error) {
             console.error(error);

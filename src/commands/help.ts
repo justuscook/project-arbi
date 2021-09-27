@@ -29,7 +29,7 @@ export async function execute(interaction: CommandInteraction) {
     for (const file of commandFiles) {
         const command = require(__dirname + `\\${file}`);
         commandUsage.push({
-            name:file,
+            name:file.replace('.js','').toLowerCase(),
             usage: command.usage})
         console.log(command)
     }
@@ -44,14 +44,14 @@ export async function execute(interaction: CommandInteraction) {
             value: `Description: ${c[1].description}`,
             inline: false
         });
-        if (c[1].name === commandName) {
+        if (c[1].name.toLowerCase() === commandName.toLowerCase()) {
             embed.fields.push({
                 name: 'How to use:',
-                value: (commandUsage.filter(x => x.name === commandName).length > 0) ? commandUsage.find(x => x.name === commandName).usage : 'Coming soon!',
+                value: (commandUsage.filter(x => x.name.toLowerCase() === commandName.toLowerCase()).length > 0) ? commandUsage.find(x => x.name.toLowerCase() === commandName.toLowerCase()).usage : 'Coming soon!',
                 inline: false
             })
             console.log(commandUsage.find(x => x.name === commandName) )
-            embed.description = `Here is more help with ${c[1].name!}`;
+            embed.description = `Here is more info about ${c[1].name!}`;
             break;
         }
     }
@@ -60,4 +60,4 @@ export async function execute(interaction: CommandInteraction) {
     await interaction.user.send({ embeds: [embed] })
 }
 
-export const usage = `/help for basic help\n/help ${bold('tab')} command_name for more help on a command`
+export const usage = `/help - for basic help\n/help ${bold('tab')} command_name - for info about a command`
