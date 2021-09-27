@@ -31,8 +31,9 @@ export async function execute(interaction: CommandInteraction) {
         commandUsage.push({
             name:file,
             usage: command.usage})
+        console.log(command)
     }
-console.log(commandUsage)
+
     for (const c of commands) {
         if(commandName !== null && commandName !== c[1].name)
         {
