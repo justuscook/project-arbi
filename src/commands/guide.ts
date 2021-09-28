@@ -91,7 +91,7 @@ export async function execute(interaction) {
             });
             guides = guides.filter(x => x.aprroved === 'TRUE');
 
-            const found: util.IGuide[] = util.fuzzySearch(guides, input, ['champion','title']);
+            const found: util.IGuide[] = util.fuzzySearch(guides, input, ['champion', 'title']);
             if (found.length === 0) {
                 await interaction.followUp(`There are no guides for ${bold(input)} yet!`);
                 return;
@@ -109,20 +109,16 @@ export async function execute(interaction) {
                     .setImage(`attachment://${midImage.name}`);
                 let botEmbed = new MessageEmbed();
                 let botImage;
-                if (f.botImage !== undefined) {
-                    botImage = await util.getMessageAttacment(f.botImage);
-                    botEmbed = new MessageEmbed()
-                        .setDescription(f.botSlide)
-                        .setTitle(f.title)
-                        .setImage(`attachment://${botImage.name}`)
-                        .setFooter(`Page ${found.indexOf(f) + 1}`);
+                if (f.botImage === undefined) {
+                    f.botImage = 'https://company.plarium.com/en/images/press-kits-raid-2.png'
                 }
-                else {
-                    botEmbed = new MessageEmbed()
-                        .setDescription(f.botSlide)
-                        .setTitle(f.title)
-                        .setFooter(`Page ${found.indexOf(f) + 1}`);
-                }
+                botImage = await util.getMessageAttacment(f.botImage);
+                botEmbed = new MessageEmbed()
+                    .setDescription((f.botSlide) ? f.botSlide : 'Thanks for looking up our guides!')
+                    .setTitle(f.title)
+                    .setImage(`attachment://${botImage.name}`)
+                    .setFooter(`Page ${found.indexOf(f) + 1}`);
+
                 embeds.push({
                     topEmbed: topEmbed,
                     topImage: topImage,
@@ -159,7 +155,7 @@ export async function execute(interaction) {
                     )
                 };
                 if (userToDM !== null && canShowInServerOrDM) {
-                    const commandMessage = await userToDM.send({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage,embeds[0].botImage ], components: [row1, row2] });
+                    const commandMessage = await userToDM.send({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1, row2] });
                     interaction.user.id = userToDM.id;
                     interaction.channel.id = await (await userToDM.createDM()).id
                     await util.buttonPagination(userToDM.id, commandMessage as Message, embeds);
