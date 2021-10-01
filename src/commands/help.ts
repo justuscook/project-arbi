@@ -1,7 +1,7 @@
 import { bold, Embed, SlashCommandBuilder, userMention } from '@discordjs/builders';
 import { ApplicationCommandPermissionData, ButtonInteraction, CommandInteraction, Interaction, MessageActionRow, MessageButton, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, MessageEmbed, MessageSelectMenu, MessageSelectMenuOptions } from 'discord.js';
 import { stringify } from 'querystring';
-import { EmbedColor, inboxLinkButton } from '../general/util'
+import { inboxLinkButton } from '../general/util'
 import fs from 'fs';
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()

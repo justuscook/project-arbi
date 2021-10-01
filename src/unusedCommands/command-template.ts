@@ -2,7 +2,6 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { time } from 'console';
 import exp from 'constants';
 import discord, { ApplicationCommandPermissionData, ButtonInteraction, CommandInteraction, Interaction, MessageActionRow, MessageButton, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, MessageEmbed, MessageSelectMenu, MessageSelectMenuOptions } from 'discord.js';
-import { EmbedColor } from '../general/util'
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('name')

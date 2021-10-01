@@ -1,32 +1,22 @@
-import { Client, Collection, CommandInteraction, GuildMemberRoleManager, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, User, Util } from "discord.js";
-import Google, { google } from 'googleapis';
+import { Client, ClientApplication, Collection, CommandInteraction, GuildMemberRoleManager, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, User, Util } from "discord.js";
+import { google } from 'googleapis';
 import { Storage } from '@google-cloud/storage';
 import path from 'path';
 import Fuse from 'fuse.js';
 import Axios from 'axios';
 import { v1 as uuidv1 } from 'uuid';
 import { Embed } from "@discordjs/builders";
+import { TIMEOUT } from "dns";
+import { time } from "console";
 
 export enum Timeout {
     Mins15 = 900000,//900000
 }
-
-export enum EmbedColor {
-    PURPLE = 0xFF00FF,
-    YELLOW = 0xFFFF00,
-    BLACK = 0x000000,
-    GREY = 0xCAC8C8,
-    ORANGE = 0xFF8C00,
-    BLUE = 0x00FFFF
-}
-
 export const guidesSheetID = "1cnxxW3U0nWjLX7OyC-FqmUApwbygFC5HIi7Jl4NSbXo";
 
-
 const sheets = google.sheets('v4');
-const drive = google.drive('v3');
 
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'];
+const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 const projectId = 'arbi-326316'
 const keyFilename = path.join(__dirname, '../key.json');
 export async function getAuthToken() {
@@ -55,6 +45,7 @@ export async function getSpreadSheetValues({ spreadsheetId, auth, sheetName }) {
     });
     return res;
 }
+/*
 export interface IGuide {
     aprroved: string,
     title: string,
@@ -68,7 +59,7 @@ export interface IGuide {
     botSlide?: string,
     botImage?: string
     tags?: string[],
-}
+}*/
 
 
 export function fuzzySearch(data: any[], filter: any, searchType: string[]) {
@@ -105,9 +96,9 @@ export function fuzzySearch(data: any[], filter: any, searchType: string[]) {
         return bestMatch;
     }
     else {
-        const fuzzy3 = new Fuse(data, {
+        const fuzzy2 = new Fuse(data, {
             keys: searchType,
-            threshold: .35,
+            threshold: .3,
             shouldSort: true,
             findAllMatches: false,
             isCaseSensitive: false,
@@ -115,64 +106,80 @@ export function fuzzySearch(data: any[], filter: any, searchType: string[]) {
             includeScore: true,
             ignoreLocation: true
         });
-        const result3 = fuzzy3.search(filter);
-        bestMatch = result3.map((x: { item: any; }) => x.item);
+        const result2 = fuzzy2.search(filter);
+        bestMatch = result2.map((x: { item: any; }) => x.item);
     }
     return bestMatch;
 }
 
-export async function getMessageAttacment(image: string): Promise<MessageAttachment | undefined> {
+export async function getMessageAttacment(image: string): Promise<MessageAttachment> {
     let imageDownload;
-    const id = uuidv1();
-    if (image !== undefined) {
-        if (image.includes('open?id')) {
-            imageDownload = await drive.files.get({
-                fileId: image.substr(image.indexOf('=') + 1, image.length - image.indexOf('=')),
-                auth: await getAuthToken(),
-                alt: 'media'
-            }, {
-                responseType:
-                    'text'
-            });            
-            return new MessageAttachment(Buffer.from(imageDownload.data), `${id}.png`);
-        }
-        else {
-            imageDownload = await Axios({
-                url: image,
-                method: 'GET',
-                responseType: 'arraybuffer'
-            });
-            return new MessageAttachment(imageDownload.data, `${id}.png`);
-        }
+    if (image.includes('open?id')) {
+        imageDownload = await Axios({
+            url: image.replace('open?id=', 'uc?export-download&id='),
+            method: 'GET',
+            responseType: 'arraybuffer'
+        });
     }
-    return undefined;
+    else {
+        imageDownload = await Axios({
+            url: image,
+            method: 'GET',
+            responseType: 'arraybuffer'
+        });
+    }
+    const id = uuidv1();
+    return new MessageAttachment(imageDownload.data, `${id}.png`);
 }
 
 export interface IMessageEmbeds {
     topEmbed: MessageEmbed,
     midEmbed: MessageEmbed,
     botEmbed: MessageEmbed,
-    topImage: MessageAttachment,
-    midImage: MessageAttachment,
-    botImage: MessageAttachment
+    topImage?: MessageAttachment,
+    midImage?: MessageAttachment,
+    botImage?: MessageAttachment
 }
 
-export async function buttonPagination(buttonUserID: string, message: Message, embeds: IMessageEmbeds[]) {
+export async function buttonPagination(buttonUserID: string, messages: Message[], embeds: IMessageEmbeds[]) {
     const filter = i => i.user.id === buttonUserID;
-    const collector = message.channel.createMessageComponentCollector({ filter, time: Timeout.Mins15 });//time: util.Timeout.Mins15
+    const collector = messages[2].createMessageComponentCollector({ filter, time: Timeout.Mins15 });//time: util.Timeout.Mins15
     collector.on('collect', async (i: MessageComponentInteraction) => {
-        i.deferUpdate();
+        await i.deferUpdate();
         //message = await interaction.fetchReply() as Message;
-        message.removeAttachments()
-        await message.edit({ embeds: [embeds[parseInt(i.customId) - 1].topEmbed, embeds[parseInt(i.customId) - 1].midEmbed, embeds[parseInt(i.customId) - 1].botEmbed], files: [embeds[parseInt(i.customId) - 1].topImage, embeds[parseInt(i.customId) - 1].midImage, embeds[parseInt(i.customId) - 1].botImage] });
-    });
-    collector.on('end', async (x) => {
-        for (const m of message.components) {
-            for (const b of m.components) {
-                b.setDisabled(true);
+        for (const m of messages) {
+            await m.removeAttachments()
+        }
+        await messages[0].edit({ embeds: [embeds[parseInt(i.customId) - 1].topEmbed] });
+        await messages[1].edit({ embeds: [embeds[parseInt(i.customId) - 1].midEmbed] });
+        //await messages[2].edit({ embeds: [embeds[parseInt(i.customId) - 1].botEmbed]});
+        const rows = messages[2].components;
+        for (const row of rows) {
+            for (const b of row.components) {
+                if (b.customId !== i.customId) {
+                    (b as MessageButton).setStyle('SUCCESS')
+                }
+                else {
+                    (b as MessageButton).setStyle('PRIMARY')
+                }
             }
         }
-        await message.edit({ components: message.components })
+        if (rows.length > 1) {
+            await i.editReply({ embeds: [embeds[parseInt(i.customId) - 1].botEmbed], components: [rows[0], rows[1]] })
+        }
+        else {
+            await i.editReply({ embeds: [embeds[parseInt(i.customId) - 1].botEmbed], components: [rows[0]] })
+        }
+    });
+    collector.on('end', async (x) => {
+        for (const m of messages) {
+            for (const r of m.components) {
+                for (const c of r.components) {
+                    c.setDisabled(true);
+                }
+            }
+            await m.edit({ components: m.components })
+        }
     });
 }
 
@@ -186,8 +193,8 @@ export async function canShowInServerOrDM(interaction: CommandInteraction): Prom
     //testing server ID 647916859718369303
     //testing server Role id 227837830704005140
     //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
-    if (interaction.guildId === '647916859718369303') {
-        const role = await (await interaction.member.roles as GuildMemberRoleManager).cache.find(x => x.id === '227837830704005140');
+    if (interaction.guildId === '532196192051003443') {
+        const role = await (await interaction.member.roles as GuildMemberRoleManager).cache.find(x => x.id === '861626304344490034');
         if (role === undefined) {
             return false;
         }
@@ -200,20 +207,20 @@ export function removeShow(text: string): string {
     return text.replace('show', '');
 }
 
-
-export function delayDeteleMessage(message: Message, time?: number) {
-    if (!time) time = Timeout.Mins15;
-    setTimeout(async () => {
-        await message.delete();
-    }, time)
+export interface IGuide {
+    tag: string[];
+    title: string;
+    author: string[] | string;
+    data: Data[];
+    stage: string;
+    rarity: string;
+    order?: number;
 }
 
-export function simpleEmbed(text: string): Embed {
-    const embed: Embed = new Embed({
-        description: text,
-        color: EmbedColor.YELLOW
-    })
-    return embed;
+export interface Data {
+    label: string;
+    desc: string;
+    image?: string;
 }
 
 export async function inboxLinkButton(user: User): Promise<MessageActionRow> {
@@ -227,16 +234,70 @@ export async function inboxLinkButton(user: User): Promise<MessageActionRow> {
     return inbox;
 }
 
-import { distance } from 'fastest-levenshtein';
+export async function delayDeleteMessage(message: Message, timeout?: number) {
+    if (timeout === undefined) timeout = Timeout.Mins15;
+    setTimeout(async () => {
+        await message.delete();
+    }, timeout);
+}
 
-export function matchStrength(target: string, match: string): number {
-    if (target.length === 0 || match.length === 0) {
-        return 0;
+export async function GetAuthor(client: Client, authorIDs: string[] | string): Promise<User[]> {
+    let authors: User[] = [];
+    if (!Array.isArray(authorIDs)) {
+        let author: User;
+        try {
+            author = await client.users.fetch(authorIDs);
+        }
+        catch {
+            author = await client.users.fetch('888450658397741057');
+        }
+        authors.push(author);
     }
-    const d = distance(target.toLocaleLowerCase(), match.toLocaleLowerCase());
-    return (match.length - (d - Math.max(0, target.length - match.length))) / match.length;
+    else {
+        for (const a of authorIDs) {
+            let author: User;
+            try {
+                author = await client.users.fetch(a);
+            }
+            catch {
+                author = await client.users.fetch('888450658397741057');
+            }
+            authors.push(author);
+        }
+    }
+
+    return authors;
 }
 
-export function getSortedResults(someStringArray: string[], queryString: string) {
-    return someStringArray.sort((a, b) => matchStrength(a, queryString) - matchStrength(b, queryString));
+export function getGuideList(guide_data: IGuide[]): string[] {
+    let totalChampGuides = 0;
+    let guides = '';
+    const champs: string[] = [];
+    guide_data = guide_data.sort((a, b): number => {
+        if (a.tag > b.tag) return 1;
+        if (a.tag < b.tag) return -1;
+        return 0;
+    });
+    for (const g of guide_data) {
+        totalChampGuides += 1;
+        if (champs.includes(g.tag[0].trim())) {
+            continue;
+        }
+        if (g.tag.includes('champion')) champs.push(g.tag[0].trim());
+        else guides += `${g.title}\n`
+    }
+    let champions = `There are ${totalChampGuides.toString()} guides in our database for ${champs.length} champions:\n\n`;
+    let champions2 = '';
+    const index1 = ((champs.length + (champs.length % 2)) / 2);
+    const index2 = ((champs.length - (champs.length % 2)) / 2);
+    for (let i = 0; i < index1; i++) {
+        champions += `${champs[i]}, `
+    }
+    for (let i = index1; i < index2 + index1; i++) {
+        champions2 += `${champs[i]}, `
+    }
+    champions = champions.trim().substring(0, champions.length - 2);
+    guides = guides.trim();
+    return [champions, champions2, guides];
 }
+
