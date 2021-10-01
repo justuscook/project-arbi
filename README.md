@@ -1,3 +1,11 @@
+<div align="left">
+  <br />
+  <p>
+    <img src="https://user-images.githubusercontent.com/26823268/135659477-759486db-238b-459f-941e-1c82501dcb19.png" width="150" alt="arbi logo" />
+  </p>
+  <br />
+</div>
+
 # project-arbi
 Project Arbi is a discord bot for RAID: Shadow Legends using Discord.js.
 
