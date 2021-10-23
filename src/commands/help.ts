@@ -15,7 +15,7 @@ export async function execute(interaction: CommandInteraction) {
     await interaction.deferReply();
     const commandName = interaction.options.getString('command_name')
     //const commands = await interaction.client.application.commands.fetch();
-    const commands = await interaction.guild.commands.fetch();
+    const commands = await interaction.client.application.commands.fetch();
     const embed: MessageEmbed = new MessageEmbed({
         description: `${userMention(interaction.user.id)} Here is a list of my commands!`
     });
@@ -27,16 +27,16 @@ export async function execute(interaction: CommandInteraction) {
     const commandUsage: commandUsage[] = [];
 
     for (const file of commandFiles) {
-        const command = require(__dirname + `\\${file}`);
+        const command = require(__dirname + `//${file}`);
         commandUsage.push({
-            name:file.replace('.js','').toLowerCase(),
-            usage: command.usage})
-        console.log(command)
+            name: file.replace('.js', '').toLowerCase(),
+            usage: command.usage
+        })
+        //console.log(command)
     }
 
     for (const c of commands) {
-        if(commandName !== null && commandName !== c[1].name)
-        {
+        if (commandName !== null && commandName !== c[1].name) {
             continue;
         }
         embed.fields.push({
@@ -44,18 +44,18 @@ export async function execute(interaction: CommandInteraction) {
             value: `Description: ${c[1].description}`,
             inline: false
         });
-        if (c[1].name.toLowerCase() === commandName.toLowerCase()) {
+        if (commandName !== null && c[1].name.toLowerCase() === commandName.toLowerCase()) {
             embed.fields.push({
                 name: 'How to use:',
                 value: (commandUsage.filter(x => x.name.toLowerCase() === commandName.toLowerCase()).length > 0) ? commandUsage.find(x => x.name.toLowerCase() === commandName.toLowerCase()).usage : 'Coming soon!',
                 inline: false
             })
-            console.log(commandUsage.find(x => x.name === commandName) )
+            //console.log(commandUsage.find(x => x.name === commandName))
             embed.description = `Here is more info about ${c[1].name!}`;
             break;
         }
     }
-    
+
     await interaction.followUp({ content: `${userMention(interaction.user.id)} I sent my help command output to your inbox, click below to check!`, components: [await inboxLinkButton(interaction.user)] })
     await interaction.user.send({ embeds: [embed] })
 }

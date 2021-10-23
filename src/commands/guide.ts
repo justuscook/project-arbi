@@ -2,8 +2,6 @@ import { SlashCommandBuilder, bold, userMention, Embed } from '@discordjs/builde
 import { CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbed, MessageEmbedImage, User } from 'discord.js';
 import { IMessageEmbeds } from '../general/util'
 import * as util from '../general/util';
-import { MongoClient } from 'mongodb';
-import { dbpass } from '../config.json';
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('guide')
@@ -37,8 +35,7 @@ export async function execute(interaction: CommandInteraction) {
         input = util.removeShow(input).trimEnd().trimStart();
         showInServer = true;
     }
-    const uri = `mongodb+srv://arbi:${dbpass}@arbi.g6e2c.mongodb.net/Arbi?retryWrites=true&w=majority`;
-    const mongoClient: MongoClient = new MongoClient(uri);
+
     try {
         const inbox = new MessageActionRow()
             .addComponents(
@@ -47,8 +44,8 @@ export async function execute(interaction: CommandInteraction) {
                     .setStyle('LINK')
                     .setURL(`https://discord.com/channels/@me/${await (await interaction.user.createDM()).id}`)
             );
-        await mongoClient.connect();
-        const collection = await mongoClient.db('project-arbi').collection('guides');
+
+        const collection = await util.connectToCollection('guides');
         const guides = await collection.find<util.IGuide>({}).toArray();
         const phrases = ['early game', 'mid game', 'late game', 'late', 'mid', 'early', 'late game+', 'late game +', 'late game guide', 'late game+ guide'];
         let found: util.IGuide[];
@@ -106,9 +103,7 @@ export async function execute(interaction: CommandInteraction) {
                 if (d.image !== undefined) embed.image = image;
                 embed.title = d.label;
                 embed.description = d.desc;
-                embed.footer = {
-                    text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`
-                }
+                
                 embeds.push(embed)
             }
             const authors = await util.GetAuthor(interaction.client, f.author);
@@ -120,6 +115,9 @@ export async function execute(interaction: CommandInteraction) {
             );
             embeds[0].setTitle(f.title);
             embeds[1].setTitle(f.title);
+            embeds[2].footer = {
+                text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`
+            }
             guideEmbeds.push({
                 topEmbed: embeds[0],
                 midEmbed: embeds[1],
@@ -170,7 +168,6 @@ export async function execute(interaction: CommandInteraction) {
                     interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
                     return;
                 }
-
                 const topCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
@@ -218,8 +215,4 @@ export async function execute(interaction: CommandInteraction) {
     catch (err) {
         console.log(err)
     }
-    finally {
-        await mongoClient.close();
-    }
-
 }

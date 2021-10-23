@@ -2,9 +2,8 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import exp from 'constants';
 import discord, { MessageEmbed } from 'discord.js';
 const embed: MessageEmbed = new MessageEmbed({
-    type: 'rich',
-    color: 'YELLOW',
-    description: 'You don\'t have Arbi on your other servers yet?\nWhat are you waiting for [click here NOW](https://discordapp.com/oauth2/authorize?client_id=563434743824252928&scope=bot&permissions=392256)'
+    color: 'GOLD',
+    description: 'You don\'t have Arbi on your other servers yet?\nWhat are you waiting for [click here NOW](https://discord.com/api/oauth2/authorize?client_id=888450658397741057&permissions=534723946560&scope=applications.commands%20bot)'
 })
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()

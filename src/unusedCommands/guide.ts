@@ -3,8 +3,7 @@ import { time } from 'console';
 import exp from 'constants';
 import discord, { ApplicationCommandPermissionData, ButtonInteraction, CommandInteraction, Interaction, MessageActionRow, MessageButton, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, MessageEmbed, MessageSelectMenu, MessageSelectMenuOptions } from 'discord.js';
 const embed: MessageEmbed = new MessageEmbed({
-    type: 'rich',
-    color: 'YELLOW',
+    color: 'GOLD',
     description: 'Guide Text'
 })
 const row1 = new MessageActionRow()

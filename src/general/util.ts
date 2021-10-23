@@ -1,22 +1,28 @@
-import { Client, ClientApplication, Collection, CommandInteraction, GuildMemberRoleManager, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, User, Util } from "discord.js";
+import { Client, ClientApplication, CommandInteraction, GuildMemberRoleManager, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, TextChannel, User, Util } from "discord.js";
 import { google } from 'googleapis';
 import { Storage } from '@google-cloud/storage';
 import path from 'path';
 import Fuse from 'fuse.js';
 import Axios from 'axios';
 import { v1 as uuidv1 } from 'uuid';
-import { Embed } from "@discordjs/builders";
+import { bold, Embed } from "@discordjs/builders";
 import { TIMEOUT } from "dns";
 import { time } from "console";
-
+import { Db, MongoClient, Collection } from "mongodb";
+import { dbpass } from '../config.json';
+import { GaxiosResponse } from "gaxios";
+import { content } from "googleapis/build/src/apis/content";
+import { distance } from 'fastest-levenshtein';
 export enum Timeout {
     Mins15 = 900000,//900000
 }
-export const guidesSheetID = "1cnxxW3U0nWjLX7OyC-FqmUApwbygFC5HIi7Jl4NSbXo";
+export const guidesSheetID = "14l4H0_YPWsQjdWLgFI97a7L9KSCcFnI-mD6gFkVJGm0";
+//1cnxxW3U0nWjLX7OyC-14l4H0_YPWsQjdWLgFI97a7L9KSCcFnI-mD6gFkVJGm0
 
 const sheets = google.sheets('v4');
+const drive = google.drive('v3')
 
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+const SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'];
 const projectId = 'arbi-326316'
 const keyFilename = path.join(__dirname, '../key.json');
 export async function getAuthToken() {
@@ -37,13 +43,60 @@ export async function getSpreadSheet({ spreadsheetId, auth }) {
     return res;
 }
 
-export async function getSpreadSheetValues({ spreadsheetId, auth, sheetName }) {
+export async function getSpreadSheetValues({ spreadsheetId, auth, sheetNameOrRange }) {
     const res = await sheets.spreadsheets.values.get({
         spreadsheetId,
         auth,
-        range: sheetName
+        range: sheetNameOrRange
     });
     return res;
+}
+export async function updateBGColor(auth) {
+    const res = await sheets.spreadsheets.get({
+        spreadsheetId: guidesSheetID,
+        auth: auth
+    });
+}
+export async function updateFormat(sheetId: number, range: IRange, auth, color: number[] = [0.2, 0.4, 0.05]) {
+    const res = await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: guidesSheetID,
+        auth: auth,
+        requestBody: {
+            requests: [
+                {
+                    updateCells: {
+                        range: {
+                            sheetId: sheetId,
+                            startRowIndex: range.rowStart - 1,
+                            endRowIndex: range.rowEnd,
+                            startColumnIndex: 0,
+                            endColumnIndex: 1
+                        },
+                        rows: [
+                            {
+                                values: [
+                                    {
+                                        userEnteredFormat: {
+                                            backgroundColor: {
+                                                red: color[0],
+                                                green: color[1],
+                                                blue: color[2]
+                                            }
+                                        },
+                                        userEnteredValue: {
+                                            boolValue: false
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        fields: "userEnteredFormat,userEnteredValue"
+                    }
+                }
+            ]
+        }
+    });
+    console.log('request:' + res.request)
 }
 /*
 export interface IGuide {
@@ -96,9 +149,9 @@ export function fuzzySearch(data: any[], filter: any, searchType: string[]) {
         return bestMatch;
     }
     else {
-        const fuzzy2 = new Fuse(data, {
+        const fuzzy3 = new Fuse(data, {
             keys: searchType,
-            threshold: .3,
+            threshold: .5,
             shouldSort: true,
             findAllMatches: false,
             isCaseSensitive: false,
@@ -106,10 +159,18 @@ export function fuzzySearch(data: any[], filter: any, searchType: string[]) {
             includeScore: true,
             ignoreLocation: true
         });
-        const result2 = fuzzy2.search(filter);
-        bestMatch = result2.map((x: { item: any; }) => x.item);
+        const result3 = fuzzy3.search(filter);
+        bestMatch = result3.map((x: { item: any; }) => x.item);
     }
     return bestMatch;
+   
+}
+export function matchStrength(target: string, match: string): number {
+    if (target.length === 0 || match.length === 0) {
+        return 0;
+    }
+    const d = distance(target.toLocaleLowerCase(), match.toLocaleLowerCase());
+    return (match.length - (d - Math.max(0, target.length - match.length))) / match.length;
 }
 
 export async function getMessageAttacment(image: string): Promise<MessageAttachment> {
@@ -300,4 +361,87 @@ export function getGuideList(guide_data: IGuide[]): string[] {
     guides = guides.trim();
     return [champions, champions2, guides];
 }
+export async function connectToCollection(name: string): Promise<Collection> {
+    const uri = `mongodb+srv://arbi:${dbpass}@arbi.g6e2c.mongodb.net/Arbi?retryWrites=true&w=majority`;
+    const mongoClient: MongoClient = new MongoClient(uri);
+    await mongoClient.connect();
+    const collection = await mongoClient.db('project-arbi').collection(name);
+    return collection;
+}
+export interface IRange {
+    columnEnd: number,
+    columnStart: number,
+    rowEnd: number,
+    rowStart: number
+}
+export interface IGuideResponse {
+    range: IRange,
+    sheetName: string,
+    sheetId: number,
+    data?: string[],
+    user?: string
+}
 
+export async function uploadImage(url: string, client: Client, auth): Promise<string> {
+    try {
+        let newUrl = '';
+        //console.log('image upload')
+        //https://drive.google.com/open?id=1dcCGezBWyJqnRkpZHrN64fBYvCCJfjYu
+        /*
+                const response = await Axios({
+                    url: url.replace('open?id=', 'uc?export=download&id='),
+                    method: 'GET',
+                    responseType: 'arraybuffer',
+                });
+                */
+        const test = url.substring(url.indexOf('=') + 1);
+        const response: GaxiosResponse = await drive.files.get({
+            fileId: url.substring(url.indexOf('=') + 1),
+            alt: 'media',
+            auth: auth
+        }, {
+            responseType: 'arraybuffer'
+        })
+        const imageChan: TextChannel = await client.channels.fetch('897175894949523557') as TextChannel;
+
+        const id = uuidv1();
+        const imageFile: MessageAttachment = new MessageAttachment(Buffer.from(response.data), `${id}.png`);
+        const imageUpload: Message = await imageChan.send({ files: [imageFile] })
+        newUrl = imageUpload.attachments.first().url;
+
+        return newUrl;
+    }
+    catch (err) {
+        console.log(err);
+        return 'failed download';
+    }
+}
+
+function GetAuthorName(text: string): string | string[] {
+    let name: string | string[];
+
+    if (text.includes(", ")) {
+        let nameNotTrimmed: string[] = (text !== undefined) ? text.split(", ") : ['227837830704005140'];
+        name = nameNotTrimmed.map(x => x.trim());
+    }
+    else {
+        name = (text !== undefined || text !== '') ? text.trim() : '227837830704005140';
+    }
+
+    return name;
+}
+
+export function validateGuide(guide: IGuide): string {
+    let i = 1;
+    let errors = '';
+    for (const g of guide.data) {
+        if (g.image === 'failed download') {
+            errors += `age`
+        }
+        if (g.desc.length > 2047) {
+            errors += `Description to long, check the highlightled portion: ${bold(g.label)}:\n\"${g.desc.slice(2000, 2038)}${bold(g.desc.slice(2038, 2048))}**${g.desc.slice(2048, 2100)}\"\n`;
+        }
+        i++;
+    }
+    return errors;
+}

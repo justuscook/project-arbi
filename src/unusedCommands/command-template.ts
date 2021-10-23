@@ -10,7 +10,7 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setDefaultPermission(false)
 
 export async function execute(interaction: CommandInteraction) {
-
+    interaction.deferReply();
     
 }
 
