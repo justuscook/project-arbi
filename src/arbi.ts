@@ -74,8 +74,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     else {
         guider = await client.users.fetch('227837830704005140')//227837830704005140
     }
-    if(guideResponse.user === 'mr.justus.cook@gmail.com') 
-    {
+    if (guideResponse.user === 'mr.justus.cook@gmail.com') {
         guider = await client.users.fetch('269643701888745474')//269643701888745474
     }
     if (guideErrors.length < 1) {
@@ -137,11 +136,16 @@ client.login(token);
 
 async function deployCommands() {
     const commands = [];
+    const globalCommands = [];
     const commandFiles = fs.readdirSync(__dirname + '/commands').filter(file => file.endsWith('.js'));
 
     for (const file of commandFiles) {
         const command = require(__dirname + `/commands/${file}`);
-        commands.push(command.data.toJSON());
+        if (command.registerforTesting === true)
+            if (command.registerforTesting === true) {
+                commands.push(command.data.toJSON());
+            }
+        globalCommands.push(command.data.toJSON());
     }
 
     const rest = new REST({ version: '9' }).setToken(token);
@@ -160,17 +164,30 @@ async function deployCommands() {
     */
     (async () => {
         try {
-            const responseGlobal = await rest.put(
-                Routes.applicationCommands(clientId),
-                { body: commands },
-            );
-            for(const rg of responseGlobal){
-                const command = client.application?.commands.fetch(rg.id);
-                const commandFile = require(__dirname + `/commands/${rg.name}`);
-                if (command.defaultPermission === false) {
-                    const permissions = commandFile.permissions
-                    await command.permissions.set({ permissions });
-                }                
+            const currentCommands: Collection<Snowflake, ApplicationCommand> = await client.application?.commands.fetch();
+            let newGlobalCommands = [];
+            for (const g of globalCommands) {
+                if (currentCommands.find(x => x.name === g.name)) {
+                    continue;
+                }
+                else {
+                    newGlobalCommands.push(g);
+                }
+            }
+            if (newGlobalCommands.length > 0) {
+                const responseGlobal = await rest.put(
+                    Routes.applicationCommands(clientId),
+                    { body: newGlobalCommands },
+                );
+
+                for (const rg of responseGlobal) {
+                    const command = client.application?.commands.fetch(rg.id);
+                    const commandFile = require(__dirname + `/commands/${rg.name}`);
+                    if (command.defaultPermission === false) {
+                        const permissions = commandFile.permissions
+                        await command.permissions.set({ permissions });
+                    }
+                }
             }
             console.log(`Successfully registered application commands globally!`);
             for (const g of guildIDs) {
@@ -183,6 +200,7 @@ async function deployCommands() {
                 for (const r of response) {
                     const command = await guild?.commands.fetch(r.id);
                     const commandFile = require(__dirname + `/commands/${r.name}`);
+
                     if (command.defaultPermission === false) {
                         const permissions = commandFile.permissions
                         await command.permissions.set({ permissions });

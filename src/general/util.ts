@@ -162,8 +162,7 @@ export function fuzzySearch(data: any[], filter: any, searchType: string[]) {
         const result3 = fuzzy3.search(filter);
         bestMatch = result3.map((x: { item: any; }) => x.item);
     }
-    return bestMatch;
-   
+    return bestMatch;   
 }
 export function matchStrength(target: string, match: string): number {
     if (target.length === 0 || match.length === 0) {
@@ -248,7 +247,22 @@ export function tolower(test: string): string {
     return test.toLowerCase();
 }
 
-export async function canShowInServerOrDM(interaction: CommandInteraction): Promise<boolean> {
+export async function canDM(interaction: CommandInteraction): Promise<boolean> {
+    //Raid Server ID 532196192051003443
+    //Mod team role ID 861626304344490034
+    //testing server ID 647916859718369303
+    //testing server Role id 227837830704005140
+    //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
+    if (interaction.guildId === '532196192051003443') {
+        const role = await (await interaction.member.roles as GuildMemberRoleManager).cache.find(x => x.id === '861626304344490034');
+        if (role !== undefined) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export async function canShow(interaction: CommandInteraction): Promise<boolean> {
     //Raid Server ID 532196192051003443
     //Mod team role ID 861626304344490034
     //testing server ID 647916859718369303
@@ -262,6 +276,7 @@ export async function canShowInServerOrDM(interaction: CommandInteraction): Prom
     }
     return true;
 }
+
 
 export function removeShow(text: string): string {
     text = text.toLowerCase();

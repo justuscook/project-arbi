@@ -3,6 +3,7 @@ import { ApplicationCommandPermissionData, ButtonInteraction, CommandInteraction
 import { stringify } from 'querystring';
 import { inboxLinkButton } from '../general/util'
 import fs from 'fs';
+import * as util from '../general/util'
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('help')
@@ -13,51 +14,54 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
     await interaction.deferReply();
-    const commandName = interaction.options.getString('command_name')
-    //const commands = await interaction.client.application.commands.fetch();
-    const commands = await interaction.client.application.commands.fetch();
-    const embed: MessageEmbed = new MessageEmbed({
-        description: `${userMention(interaction.user.id)} Here is a list of my commands!`
-    });
-    const commandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith('.js'));
-    interface commandUsage {
-        usage: string,
-        name: string
-    }
-    const commandUsage: commandUsage[] = [];
-
-    for (const file of commandFiles) {
-        const command = require(__dirname + `//${file}`);
-        commandUsage.push({
-            name: file.replace('.js', '').toLowerCase(),
-            usage: command.usage
-        })
-        //console.log(command)
-    }
-
-    for (const c of commands) {
-        if (commandName !== null && commandName !== c[1].name) {
-            continue;
-        }
-        embed.fields.push({
-            name: c[1].name,
-            value: `Description: ${c[1].description}`,
-            inline: false
+    let commandName = interaction.options.getString('command_name')
+    if (commandName.toLowerCase().includes('show')) {
+        commandName = util.removeShow(commandName).trimEnd().trimStart();
+        commandName = commandName;
+        //const commands = await interaction.client.application.commands.fetch();
+        const commands = await interaction.client.application.commands.fetch();
+        const embed: MessageEmbed = new MessageEmbed({
+            description: `${userMention(interaction.user.id)} Here is a list of my commands!`
         });
-        if (commandName !== null && c[1].name.toLowerCase() === commandName.toLowerCase()) {
+        const commandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith('.js'));
+        interface commandUsage {
+            usage: string,
+            name: string
+        }
+        const commandUsage: commandUsage[] = [];
+
+        for (const file of commandFiles) {
+            const command = require(__dirname + `//${file}`);
+            commandUsage.push({
+                name: file.replace('.js', '').toLowerCase(),
+                usage: command.usage
+            })
+            //console.lo
+        }
+        const command = commands.find(x => x.name.toLowerCase() === commandName)
+        if (command === undefined) {
+            for (const c of commands) {
+                embed.fields.push({
+                    name: c[1].name,
+                    value: `Description: ${c[1].description}`,
+                    inline: false
+                });
+            }
+        } else {
             embed.fields.push({
                 name: 'How to use:',
-                value: (commandUsage.filter(x => x.name.toLowerCase() === commandName.toLowerCase()).length > 0) ? commandUsage.find(x => x.name.toLowerCase() === commandName.toLowerCase()).usage : 'Coming soon!',
+                value: (commandUsage.find(x => x.name.toLowerCase() === commandName.toLowerCase()).usage !== undefined) ? commandUsage.find(x => x.name.toLowerCase() === commandName.toLowerCase()).usage : command.description,
                 inline: false
             })
-            //console.log(commandUsage.find(x => x.name === commandName))
-            embed.description = `Here is more info about ${c[1].name!}`;
-            break;
+            embed.description = `Here is more info about ${command.name!}`;
         }
+        await interaction.followUp({ content: `${userMention(interaction.user.id)} I sent my help command output to your inbox, click below to check!`, components: [await inboxLinkButton(interaction.user)] })
+        await interaction.user.send({ embeds: [embed] })
     }
-
-    await interaction.followUp({ content: `${userMention(interaction.user.id)} I sent my help command output to your inbox, click below to check!`, components: [await inboxLinkButton(interaction.user)] })
-    await interaction.user.send({ embeds: [embed] })
 }
 
-export const usage = `/help - for basic help\n/help ${bold('tab')} command_name - for info about a command`
+
+    export const usage = `/help - for basic help\n/help ${bold('tab')} command_name - for info about a command`;
+
+    export const registerforTesting = false;
+

@@ -28,14 +28,22 @@ export async function execute(interaction: CommandInteraction) {
     const embeds: IMessageEmbeds[] = [];
     let userToDM: User = interaction.options.getUser('user_to_dm');
     const originalUser: User = interaction.user;
-    let canShowInServerOrDM = await util.canShowInServerOrDM(interaction);
-    let input: string = await interaction.options.getString('input');
-    let showInServer = await interaction.options.getBoolean('show_in_server');
+    let canDM = await util.canDM(interaction);
+    let canShow = await util.canShow(interaction);
+    let input: string = interaction.options.getString('input');
+    let showInServer = interaction.options.getBoolean('show_in_server');
     if (input.toLowerCase().includes('show')) {
         input = util.removeShow(input).trimEnd().trimStart();
         showInServer = true;
+    }//const regexCheck = /<@(!|)userID>/gim;
+    //if (regexCheck.exec(x) !== null) {}
+    if (input.includes('<@')) {
+        input = input.replace('!', '');
+        let userID = input.substr(input.indexOf('<@') + 2, 18)
+        userToDM = await interaction.client.users.fetch(userID);
+        input = input.replace(`<@${userID}>`, '');
     }
-
+let test;
     try {
         const inbox = new MessageActionRow()
             .addComponents(
@@ -64,7 +72,7 @@ export async function execute(interaction: CommandInteraction) {
                 .setTitle('List of champion guides continued:')
                 .setDescription(listStings[1])
                 .setColor('GOLD');
-            if (canShowInServerOrDM && showInServer) {
+            if (canShow && showInServer) {
                 const listMessage = await interaction.followUp({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
                 await util.delayDeleteMessage(listMessage as Message);
                 return;
@@ -103,7 +111,7 @@ export async function execute(interaction: CommandInteraction) {
                 if (d.image !== undefined) embed.image = image;
                 embed.title = d.label;
                 embed.description = d.desc;
-                
+
                 embeds.push(embed)
             }
             const authors = await util.GetAuthor(interaction.client, f.author);
@@ -145,7 +153,7 @@ export async function execute(interaction: CommandInteraction) {
                         .setStyle('SUCCESS')
                 )
             };
-            if (userToDM !== null && canShowInServerOrDM) {
+            if (userToDM !== null && canDM) {
                 const topCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
@@ -156,7 +164,7 @@ export async function execute(interaction: CommandInteraction) {
                 await util.buttonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
                 return;
             }
-            else if (canShowInServerOrDM && showInServer === true) {
+            else if (canShow && showInServer === true) {
                 const topCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
@@ -165,7 +173,7 @@ export async function execute(interaction: CommandInteraction) {
             }
             else {
                 if (userToDM !== null) {
-                    interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
+                    await interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
                     return;
                 }
                 const topCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].topEmbed] });
@@ -178,7 +186,7 @@ export async function execute(interaction: CommandInteraction) {
             }
         }
         else {
-            if (userToDM !== null && canShowInServerOrDM) {
+            if (userToDM !== null && canDM) {
                 const topCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
@@ -189,7 +197,7 @@ export async function execute(interaction: CommandInteraction) {
                 await util.buttonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
                 return;
             }
-            else if (canShowInServerOrDM && showInServer === true) {
+            else if (canShow && showInServer === true) {
                 const topCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
@@ -199,7 +207,7 @@ export async function execute(interaction: CommandInteraction) {
             }
             else {
                 if (userToDM !== null) {
-                    interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
+                    await interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
                     return;
                 }
                 const topCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].topEmbed] });
@@ -216,3 +224,5 @@ export async function execute(interaction: CommandInteraction) {
         console.log(err)
     }
 }
+
+export const registerforTesting = false;
