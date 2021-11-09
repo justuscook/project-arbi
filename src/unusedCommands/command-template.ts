@@ -10,7 +10,7 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setDefaultPermission(false)
 
 export async function execute(interaction: CommandInteraction) {
-    interaction.deferReply();
+    await interaction.deferReply();
     
 }
 
@@ -31,3 +31,5 @@ export const permissions: ApplicationCommandPermissionData[] = [
         permission: true
     }
 ]
+
+export const registerforTesting = false;

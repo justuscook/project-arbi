@@ -7,18 +7,39 @@ import { connectToCollection, Data, getAuthToken, getSpreadSheetValues, guidesSh
 import { auth } from 'google-auth-library';
 import { uploadImage } from './general/util';
 import { userMention } from '@discordjs/builders';
+import https from 'https';
+import http from 'http';
 
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 
 const client: any = new Client({ intents: [Intents.FLAGS.GUILDS] });
 const app = express();
+
 app.use(bodyParser.json());
+try {
+    const httpServer = http.createServer(app);
+    const httpsServer = https.createServer({
+        key: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/privkey.pem'),
+        cert: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/fullchain.pem')
+    }, app);
+    httpServer.listen(80, () => {
+        console.log('HTTP Server listening on port 80');
+    })
+    httpsServer.listen(443, () => {
+        console.log('HTTPS Server listening on port 443');
+    })
+}
+catch {
+    console.log('Testing environment.')
+}
 
 app.listen(9001, () => {
-    console.log('Listing on port 9001 ⚡');
+    console.log('Bot Listening on port 9001 ⚡');
 })
-
+app.get( '/', (req: Request, res: Response) => {
+    res.send('Bot online 🤖⚡')
+})
 app.post('/guideUpdate', async (req: Request, res: Response) => {
     const auth = await getAuthToken();
     //console.log('New guide approved!')
@@ -163,21 +184,22 @@ async function deployCommands() {
         }
     */
     (async () => {
-        try {
+        try {/*
             const currentCommands: Collection<Snowflake, ApplicationCommand> = await client.application?.commands.fetch();
             let newGlobalCommands = [];
             for (const g of globalCommands) {
+                //newGlobalCommands.push(g);//fix global command permissions
                 if (currentCommands.find(x => x.name === g.name)) {
                     continue;
                 }
                 else {
                     newGlobalCommands.push(g);
                 }
-            }
-            if (newGlobalCommands.length > 0) {
+            }*/
+            if (globalCommands.length > 0) {
                 const responseGlobal = await rest.put(
                     Routes.applicationCommands(clientId),
-                    { body: newGlobalCommands },
+                    { body: globalCommands },
                 );
 
                 for (const rg of responseGlobal) {

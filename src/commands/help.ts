@@ -60,8 +60,7 @@ export async function execute(interaction: CommandInteraction) {
     }
 }
 
+export const usage = `/help - for basic help\n/help ${bold('tab')} command_name - for info about a command`;
 
-    export const usage = `/help - for basic help\n/help ${bold('tab')} command_name - for info about a command`;
-
-    export const registerforTesting = false;
+export const registerforTesting = false;
 

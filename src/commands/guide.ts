@@ -74,13 +74,13 @@ let test;
                 .setColor('GOLD');
             if (canShow && showInServer) {
                 const listMessage = await interaction.followUp({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
-                await util.delayDeleteMessage(listMessage as Message);
+                await util.delayDeleteMessages([listMessage as Message]);
                 return;
             }
             else {
                 const dmAlert = await interaction.followUp({ content: `${userMention(interaction.user.id)}${(showInServer) ? 'You can\'t show commands in this server.' : ''} I sent the list of guides to you, click the "Inbox" button below to check!`, components: [inbox] });
                 const listMessage = await interaction.user.send({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
-                await util.delayDeleteMessage(dmAlert as Message);
+                await util.delayDeleteMessages([dmAlert as Message]);
             }
             return;
         }
@@ -160,15 +160,15 @@ let test;
                 interaction.user.id = userToDM.id;
                 interaction.channel.id = await (await userToDM.createDM()).id;
                 const guideSend = await interaction.followUp({ content: `I am sending the guide(s) to ${userMention(userToDM.id)}\'s DM\'s!` });
-                await util.delayDeleteMessage(guideSend as Message, 60 * 1000);
-                await util.buttonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
+                await util.guideButtonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
                 return;
             }
             else if (canShow && showInServer === true) {
                 const topCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
-                await util.buttonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
                 return;
             }
             else {
@@ -180,8 +180,8 @@ let test;
                 const midCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
                 const dmAlert = await interaction.followUp({ content: `${userMention(interaction.user.id)}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`, components: [inbox] });
-                await util.delayDeleteMessage(dmAlert as Message, 60 * 1000);
-                await util.buttonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000);
+                await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
                 return;
             }
         }
@@ -193,15 +193,15 @@ let test;
                 interaction.user.id = userToDM.id;
                 interaction.channel.id = await (await userToDM.createDM()).id;
                 const guideSend = await interaction.followUp({ content: `I am sending the guide(s) to ${userMention(userToDM.id)}\'s DM\'s!` })
-                await util.delayDeleteMessage(guideSend as Message, 60 * 1000);
-                await util.buttonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
+                await util.guideButtonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
                 return;
             }
             else if (canShow && showInServer === true) {
                 const topCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
-                await util.buttonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
 
                 return;
             }
@@ -214,8 +214,8 @@ let test;
                 const midCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
                 const dmAlert = await interaction.followUp({ content: `${userMention(interaction.user.id)}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`, components: [inbox] });
-                await util.delayDeleteMessage(dmAlert as Message, 60 * 1000);
-                await util.buttonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000);
+                await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
                 return;
             }
         }

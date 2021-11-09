@@ -1,4 +1,4 @@
-import { Client, ClientApplication, CommandInteraction, GuildMemberRoleManager, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, TextChannel, User, Util } from "discord.js";
+import { Client, ClientApplication, ColorResolvable, CommandInteraction, GuildMemberRoleManager, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, TextChannel, User, Util } from "discord.js";
 import { google } from 'googleapis';
 import { Storage } from '@google-cloud/storage';
 import path from 'path';
@@ -114,7 +114,13 @@ export interface IGuide {
     tags?: string[],
 }*/
 
-
+/**
+ * Does a fuzzy search for the given search term.
+ * @param data Array of data to filter.
+ * @param filter Filter or seach term.
+ * @param searchType What properites to search in the JSON.
+ * @returns Array of the data the meets the search requirements, no results is a 0 size array.
+ */
 export function fuzzySearch(data: any[], filter: any, searchType: string[]) {
     let bestMatch: any[] = [];
     const fuzzy = new Fuse(data, {
@@ -162,7 +168,7 @@ export function fuzzySearch(data: any[], filter: any, searchType: string[]) {
         const result3 = fuzzy3.search(filter);
         bestMatch = result3.map((x: { item: any; }) => x.item);
     }
-    return bestMatch;   
+    return bestMatch;
 }
 export function matchStrength(target: string, match: string): number {
     if (target.length === 0 || match.length === 0) {
@@ -200,8 +206,13 @@ export interface IMessageEmbeds {
     midImage?: MessageAttachment,
     botImage?: MessageAttachment
 }
-
-export async function buttonPagination(buttonUserID: string, messages: Message[], embeds: IMessageEmbeds[]) {
+/**
+ * Create buttons for pagination.
+ * @param {string} buttonUserID User ID to watch for, ignore others.
+ * @param {Message[]} messages Messages to edit when buttons are clicked. 
+ * @param {IMessageEmbeds[]} embeds Array of embeds and attachments.
+ */
+export async function guideButtonPagination(buttonUserID: string, messages: Message[], embeds: IMessageEmbeds[]) {
     const filter = i => i.user.id === buttonUserID;
     const collector = messages[2].createMessageComponentCollector({ filter, time: Timeout.Mins15 });//time: util.Timeout.Mins15
     collector.on('collect', async (i: MessageComponentInteraction) => {
@@ -242,6 +253,53 @@ export async function buttonPagination(buttonUserID: string, messages: Message[]
         }
     });
 }
+/**
+ * SKills embeds for pagination.
+ * @param {string} buttonUserID User ID to watch for, ignore others.
+ * @param {Message} message Message to edit with pagination.
+ * @param {MessageEmbed[]} embeds Array of skill embeds.
+ */
+export async function skillsButtonPagination(buttonUserID: string, message: Message, embeds: MessageEmbed[]) {
+    const filter = i => i.user.id === buttonUserID;
+    const collector = message.createMessageComponentCollector({ filter, time: Timeout.Mins15 });//time: util.Timeout.Mins15
+    collector.on('collect', async (i: MessageComponentInteraction) => {
+        await i.deferUpdate();
+
+        await message.removeAttachments()
+
+        await message.edit({ embeds: [embeds[parseInt(i.customId) - 1]] });
+        //await messages[2].edit({ embeds: [embeds[parseInt(i.customId) - 1].botEmbed]});
+        const rows = message.components;
+        for (const row of rows) {
+            for (const b of row.components) {
+                if (b.customId !== i.customId) {
+                    (b as MessageButton).setStyle('SUCCESS')
+                }
+                else {
+                    (b as MessageButton).setStyle('PRIMARY')
+                }
+            }
+        }
+        if (rows.length > 1) {
+            await i.editReply({ embeds: [embeds[parseInt(i.customId) - 1]], components: [rows[0], rows[1]] })
+        }
+        else {
+            await i.editReply({ embeds: [embeds[parseInt(i.customId) - 1]], components: [rows[0]] })
+        }
+    });
+    collector.on('end', async (x) => {
+        const components = message.components;
+        for (const r of components) {
+            for (const c of r.components) {
+                c.setDisabled(true);
+            }
+        }
+        await message.edit({ components: components })
+
+    });
+}
+
+
 
 export function tolower(test: string): string {
     return test.toLowerCase();
@@ -277,10 +335,14 @@ export async function canShow(interaction: CommandInteraction): Promise<boolean>
     return true;
 }
 
-
+/**
+ * Removes 'show' from input
+ * @param {string} text Text to remove the word 'show' from 
+ * @returns {string} Text without the word 'show'
+ */
 export function removeShow(text: string): string {
     text = text.toLowerCase();
-    return text.replace('show', '');
+    return text.replace('show', '').trim();
 }
 
 export interface IGuide {
@@ -309,12 +371,18 @@ export async function inboxLinkButton(user: User): Promise<MessageActionRow> {
         );
     return inbox;
 }
-
-export async function delayDeleteMessage(message: Message, timeout?: number) {
+/**
+ * Deletes messages after a delay.
+ * @param {Message[]} messages Array of messages to delete
+ * @param {number} timeout Number of milliseconds to wait before deleteing messages.  Defaults to 15 mins.
+ */
+export async function delayDeleteMessages(messages: Message[], timeout?: number) {
     if (timeout === undefined) timeout = Timeout.Mins15;
     setTimeout(async () => {
-        await message.delete();
+        const chan = await messages[0].channel as TextChannel;
+        await chan.bulkDelete(messages);
     }, timeout);
+
 }
 
 export async function GetAuthor(client: Client, authorIDs: string[] | string): Promise<User[]> {
@@ -376,7 +444,13 @@ export function getGuideList(guide_data: IGuide[]): string[] {
     guides = guides.trim();
     return [champions, champions2, guides];
 }
-export async function connectToCollection(name: string): Promise<Collection> {
+/**
+ * Connects to the specified collection in the bots MongoDB
+ * @param name 
+ * @returns {Collection} MongoDB collection
+ */
+export async function
+    connectToCollection(name: string): Promise<Collection> {
     const uri = `mongodb+srv://arbi:${dbpass}@arbi.g6e2c.mongodb.net/Arbi?retryWrites=true&w=majority`;
     const mongoClient: MongoClient = new MongoClient(uri);
     await mongoClient.connect();
@@ -459,4 +533,169 @@ export function validateGuide(guide: IGuide): string {
         i++;
     }
     return errors;
+}
+
+export interface IChampionInfo {
+    name: string,
+    key: string,
+    id: string,
+    hp: string,
+    def: string,
+    atk: string,
+    spd: string,
+    crate: string,
+    cdamage: string;
+    acc: string,
+    res: string,
+    faction: string,
+    affinity: string,
+    type: string,
+    rarity: string,
+    aura?: string,
+    cheal: string,
+    skills?: ISkill[],
+    totalBooks?: string
+}
+
+export interface ISkill {
+    name: string,
+    mincd?: string,
+    maxcd: string,
+    desc: string,
+    books?: string,
+    numBooksToMax?: string,
+    basedOn: string,
+    multiplier?: string
+}
+
+export function getFactionImage(faction: string): string {
+    switch (faction) {
+        case 'Banner Lords':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/1.png';
+        case 'High Elves':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/2.png';
+        case 'Sacred Order':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/3.png';
+        case 'Coven of Magi':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/4.png';
+        case 'Ogryn Tribes':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/5.png';
+        case 'Lizardmen':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/6.png';
+        case 'Skinwalkers':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/7.png';
+        case 'Orcs':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/8.png';
+        case 'Demonspawn':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/9.png';
+        case 'Undead Hordes':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/10.png';
+        case 'Dark Elves':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/11.png';
+        case 'Knights Revenant':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/12.png';
+        case 'Barbarians':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/13.png';
+        case 'Arrows':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/14.png';
+        case 'Shadowkin':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/15.png';
+        case 'Dwarves':
+            return 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/factions/16.png';
+    }
+}
+/**
+ * 
+ * @param {string} rarity Champion rarity.
+ * @returns {ColorResolvable} Color for the champion border.
+ */
+export function getColorByRarity(rarity: string): ColorResolvable {
+    let color: ColorResolvable = 'GOLD';
+    switch (rarity.toLowerCase()) {
+        case 'common':
+            color = 'LIGHT_GREY';
+            break;
+        case 'uncommon':
+            color = 'GREEN';
+            break;
+        case 'rare':
+            color = 0x00FFFF;
+            break;
+        case 'epic':
+            color = 'PURPLE'
+            break;
+        case 'legendary':
+            color = 'GOLD';
+            break;
+    }
+    return color;
+}
+/**
+ * Returns an embed for each skill a champion has.
+ * @param {IChampionInfo} champ The champion data from MongoDB 
+ * @param {boolean} avatar Wheter or not to include the champion avatar as the thumbnail. If this is used for only skills will include the champion avatar as the embed thumbnail.
+ * @returns 
+ */
+export function getSkillsEmbeds(champ: IChampionInfo, avatar: boolean = false): MessageEmbed[] {
+    const baseURL = 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images//'
+    const pages: MessageEmbed[] = [];
+    //const hqimages = GetHQArt(champ.name);
+    let count: number = 1;
+    let maxBooks = 0;
+    champ.skills.forEach(skill => {
+        let skillNumber: string = '';
+
+        skillNumber = `A${count.toString()} `;
+
+        const embed: MessageEmbed = new MessageEmbed({
+            color: getColorByRarity(champ.rarity),
+            title: `${champ.name} - ${skillNumber}: ${skill.name}`,
+            description: skill.desc,
+            image: {
+                url: (champ.rarity !== 'Common') ? `${baseURL}newSkills/${Number(champ.id) - 6}_s${count}.png?=${uuidv1()}` : `${baseURL}newSkills/${champ.id}_s${count}.png?=${uuidv1()}`
+            },
+            fields: [
+                {
+                    name: `Upgrades:`,
+                    value: skill.books || 'No books needed.',
+                    inline: false
+                },
+                {
+                    name: `Cooldown:`,
+                    value: skill.maxcd.toString(),
+                    inline: true
+                },
+                {
+                    name: `Cooldown once booked:`,
+                    value: skill.mincd.toString(),
+                    inline: true
+                },
+                {
+                    name: `Damage based on:`,
+                    value: skill.basedOn || 'N/A',
+                    inline: true
+                },
+                {
+                    name: 'Multiplier:',
+                    value: skill.multiplier || 'N/A',
+                    inline: true
+                },
+                {
+                    name: 'Books to max skill:',
+                    value: skill.numBooksToMax || 'N/A',
+                    inline: true
+                }
+
+            ]
+        });
+        if (avatar) {
+            embed.thumbnail = {
+                url: (champ.rarity !== 'Common') ? `${baseURL}champions/${Number(champ.id) - 6}.png?=${uuidv1()}` : `${baseURL}champions/${champ.id}.png?=${uuidv1()}`
+            }
+        }
+
+        count += 1;
+        pages.push(embed);
+    })
+    return pages;
 }
