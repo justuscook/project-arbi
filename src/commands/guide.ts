@@ -1,16 +1,17 @@
-import { SlashCommandBuilder, bold, userMention, Embed } from '@discordjs/builders';
+import { SlashCommandBuilder, bold, userMention, Embed, codeBlock } from '@discordjs/builders';
 import { CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbed, MessageEmbedImage, User } from 'discord.js';
 import { IMessageEmbeds } from '../general/util'
 import * as util from '../general/util';
+import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches } from '../arbi';
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('guide')
     .addStringOption(option => option
         .setName('input')
         .setDescription('Enter a champions name or game location.  Can also be \'show\' and @mentions.')
-        .setRequired(true))
+        .setRequired(false))
     .addBooleanOption(option => option
-        .setDescription('Wether to show the command in the channel or not.')
+        .setDescription('Whether to show the command in the channel or not.')
         .setName('show_in_server')
         .setRequired(false)
     )
@@ -21,7 +22,7 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     )
     .setDescription('Search for guides by champion or dungeon name.')
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
     let row1: MessageActionRow = new MessageActionRow;
     let row2: MessageActionRow = new MessageActionRow;
@@ -32,6 +33,7 @@ export async function execute(interaction: CommandInteraction) {
     let canShow = await util.canShow(interaction);
     let input: string = interaction.options.getString('input');
     let showInServer = interaction.options.getBoolean('show_in_server');
+    if (input === null) input = 'list';
     if (input.toLowerCase().includes('show')) {
         input = util.removeShow(input).trimEnd().trimStart();
         showInServer = true;
@@ -43,7 +45,7 @@ export async function execute(interaction: CommandInteraction) {
         userToDM = await interaction.client.users.fetch(userID);
         input = input.replace(`<@${userID}>`, '');
     }
-let test;
+    let test;
     try {
         const inbox = new MessageActionRow()
             .addComponents(
@@ -57,32 +59,33 @@ let test;
         const guides = await collection.find<util.IGuide>({}).toArray();
         const phrases = ['early game', 'mid game', 'late game', 'late', 'mid', 'early', 'late game+', 'late game +', 'late game guide', 'late game+ guide'];
         let found: util.IGuide[];
-        if (input.toLowerCase().includes('list')) {
+
+        if (input.toLowerCase().includes('list') || input ==='') {
             const listStings = util.getGuideList(guides);
             const genGuidesEmbed = new MessageEmbed()
                 .setTitle('List of general game guides by title:')
-                .setDescription(listStings[2])
-                .setColor('BLURPLE');
+                .setDescription(codeBlock(listStings[2]))
+                .setColor('GOLD');
 
             const champEmbed1 = new MessageEmbed()
                 .setTitle('List of all champion guides:')
-                .setDescription(listStings[0])
+                .setDescription(codeBlock(listStings[0]))
                 .setColor('GOLD');
             const champEmbed2 = new MessageEmbed()
                 .setTitle('List of champion guides continued:')
-                .setDescription(listStings[1])
+                .setDescription(codeBlock(listStings[1]))
                 .setColor('GOLD');
             if (canShow && showInServer) {
                 const listMessage = await interaction.followUp({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
                 await util.delayDeleteMessages([listMessage as Message]);
-                return;
+                return true;
             }
             else {
                 const dmAlert = await interaction.followUp({ content: `${userMention(interaction.user.id)}${(showInServer) ? 'You can\'t show commands in this server.' : ''} I sent the list of guides to you, click the "Inbox" button below to check!`, components: [inbox] });
                 const listMessage = await interaction.user.send({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
                 await util.delayDeleteMessages([dmAlert as Message]);
             }
-            return;
+            return true;
         }
         if (phrases.includes(input)) {
             found = util.fuzzySearch(guides, input, ['tag']);
@@ -92,7 +95,11 @@ let test;
         }
         if (found.length === 0) {
             await interaction.followUp(`There are no guides for ${bold(input)} yet!`);
-            return;
+            AddToFailedGuideSearches(input);
+            return true;
+        }
+        else {
+            AddToSuccessfulGuideSearches(input);
         }
         const first10orLess: util.IGuide[] = found.filter(x => found.indexOf(x) < 10)
 
@@ -162,19 +169,19 @@ let test;
                 const guideSend = await interaction.followUp({ content: `I am sending the guide(s) to ${userMention(userToDM.id)}\'s DM\'s!` });
                 await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
                 await util.guideButtonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-                return;
+                return true;
             }
             else if (canShow && showInServer === true) {
                 const topCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
                 await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-                return;
+                return true;
             }
             else {
                 if (userToDM !== null) {
                     await interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
-                    return;
+                    return true;
                 }
                 const topCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].midEmbed] });
@@ -182,7 +189,7 @@ let test;
                 const dmAlert = await interaction.followUp({ content: `${userMention(interaction.user.id)}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`, components: [inbox] });
                 await util.delayDeleteMessages([dmAlert as Message], 60 * 1000);
                 await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-                return;
+                return true;
             }
         }
         else {
@@ -195,7 +202,7 @@ let test;
                 const guideSend = await interaction.followUp({ content: `I am sending the guide(s) to ${userMention(userToDM.id)}\'s DM\'s!` })
                 await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
                 await util.guideButtonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-                return;
+                return true;
             }
             else if (canShow && showInServer === true) {
                 const topCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].topEmbed] });
@@ -203,12 +210,12 @@ let test;
                 const botCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
                 await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
 
-                return;
+                return true;
             }
             else {
                 if (userToDM !== null) {
                     await interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
-                    return;
+                    return true;
                 }
                 const topCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].midEmbed] });
@@ -216,12 +223,14 @@ let test;
                 const dmAlert = await interaction.followUp({ content: `${userMention(interaction.user.id)}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`, components: [inbox] });
                 await util.delayDeleteMessages([dmAlert as Message], 60 * 1000);
                 await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-                return;
+                return true;
             }
         }
     }
     catch (err) {
         console.log(err)
+        return false;
+
     }
 }
 

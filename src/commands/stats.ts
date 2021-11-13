@@ -1,11 +1,11 @@
 import { bold, Embed, SlashCommandBuilder, userMention } from '@discordjs/builders';
 import discord, { ApplicationCommandPermissionData, CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
 import { getColorByRarity, connectToCollection, fuzzySearch, getFactionImage, IChampionInfo, IGuide, canDM, canShow, inboxLinkButton, delayDeleteMessages, getSkillsEmbeds, skillsButtonPagination, removeShow } from '../general/util';
-import { AddCommandToTotalFailedCommands, logger } from '../arbi';
+import { logger } from '../arbi';
 
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
-    .setName('info')
+    .setName('stats')
 
     .addStringOption(option => option.setName('champion_name')
         .setDescription('Enter a champions name').setRequired(true))
@@ -131,7 +131,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     text: `Not the right champion? Try one of these searches: ${otherMatches}`
                 }
             }
-            const skillsEmbeds: MessageEmbed[] = getSkillsEmbeds(champ, false);
+            
             let i = 1;
             for (const s of champ.skills) {
                 row1.addComponents(
@@ -144,9 +144,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             }
             if (allowShow && showInServer === true) {
                 const statsMessage = await interaction.followUp({ embeds: [embed] });
-                const skillsMessage = await interaction.followUp({ embeds: [skillsEmbeds[0]], components: [row1] });
-                await skillsButtonPagination(interaction.user.id, skillsMessage as Message, skillsEmbeds);
-                await delayDeleteMessages([statsMessage as Message, skillsMessage as Message])
+                await delayDeleteMessages([statsMessage as Message])
 
             }
             else {
@@ -160,25 +158,22 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     const dmWarn = await interaction.followUp({ embeds: [dmWarnEmbed], components: [inbox] });
                     await delayDeleteMessages([dmWarn as Message], 60 * 1000)
                     const _ = await interaction.user.send({ embeds: [embed] });
-                    const skillsDM = await interaction.user.send({ embeds: [skillsEmbeds[0]], components: [row1] });
-                    await skillsButtonPagination(interaction.user.id, skillsDM, skillsEmbeds);
                 }
                 else {
                     const _ = await interaction.followUp({ embeds: [embed] });
-                    const skillsDM = await interaction.followUp({ embeds: [skillsEmbeds[0]], components: [row1] });
-                    await skillsButtonPagination(interaction.user.id, skillsDM as Message, skillsEmbeds);
                 }
 
             }
-            return true;
         }
         else {
+
             const fail = await interaction.followUp(`${userMention(interaction.user.id)} I didn't find any matches for your search ${bold(champName)}, please try again.`)
-            return false;
         }
+        return true;
     }
     catch (err) {
         logger.error(err);
+        return false;
     }
 }
 

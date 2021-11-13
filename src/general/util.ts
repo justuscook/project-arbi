@@ -1,4 +1,4 @@
-import { Client, ClientApplication, ColorResolvable, CommandInteraction, GuildMemberRoleManager, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, TextChannel, User, Util } from "discord.js";
+import { ApplicationCommandPermissionData, Client, ClientApplication, ColorResolvable, CommandInteraction, GuildMemberRoleManager, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, TextChannel, User, Util } from "discord.js";
 import { google } from 'googleapis';
 import { Storage } from '@google-cloud/storage';
 import path from 'path';
@@ -13,6 +13,15 @@ import { dbpass } from '../config.json';
 import { GaxiosResponse } from "gaxios";
 import { content } from "googleapis/build/src/apis/content";
 import { distance } from 'fastest-levenshtein';
+
+/*
+export interface ICommand {
+    execute: Promise<boolean>,
+    registerforTesting?: boolean,
+    permissions?: ApplicationCommandPermissionData[],
+    usage?: string
+}*/
+
 export enum Timeout {
     Mins15 = 900000,//900000
 }

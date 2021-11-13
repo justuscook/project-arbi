@@ -1,11 +1,11 @@
 import { bold, Embed, SlashCommandBuilder, userMention } from '@discordjs/builders';
 import discord, { ApplicationCommandPermissionData, CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
 import { getColorByRarity, connectToCollection, fuzzySearch, getFactionImage, IChampionInfo, IGuide, canDM, canShow, inboxLinkButton, delayDeleteMessages, getSkillsEmbeds, skillsButtonPagination, removeShow } from '../general/util';
-import { AddCommandToTotalFailedCommands, logger } from '../arbi';
+import { logger } from '../arbi';
 
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
-    .setName('info')
+    .setName('skills')
 
     .addStringOption(option => option.setName('champion_name')
         .setDescription('Enter a champions name').setRequired(true))
@@ -49,89 +49,15 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     }
                 }
             }
-            let embed: MessageEmbed;
-            embed = new MessageEmbed({
-                title: (champ.name),
-                color: getColorByRarity(champ.rarity),
-                thumbnail: {
-                    url: getFactionImage(champ.faction)
-                },
-                image: {
-                    url: `https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/newAvatars/${parseInt(champ.id) - 6}.png`
-                },
-                fields: [{
-                    name: 'Faction:',
-                    value: champ.faction,
-                    inline: true
-                },
-                {
-                    name: 'Type:',
-                    value: champ.type,
-                    inline: true
-                },
-                {
-                    name: 'Affinity:',
-                    value: champ.affinity,
-                    inline: true
-                },
-                {
-                    name: 'Rarity:',
-                    value: champ.rarity,
-                    inline: true
-                },
-                {
-                    name: 'HP:',
-                    value: champ.hp,
-                    inline: true
-                },
-                {
-                    name: 'Attack:',
-                    value: champ.atk,
-                    inline: true
-                },
-                {
-                    name: 'Defense:',
-                    value: champ.def,
-                    inline: true
-                },
-                {
-                    name: 'Critical Rate:',
-                    value: champ.crate,
-                    inline: true
-                },
-                {
-                    name: 'Crititcal Damage:',
-                    value: champ.cdamage,
-                    inline: true
-                },
-                {
-                    name: 'Speed:',
-                    value: champ.spd,
-                    inline: true
-                },
-                {
-                    name: 'Resistance:',
-                    value: champ.res,
-                    inline: true
-                },
-                {
-                    name: 'Accuracy:',
-                    value: champ.acc,
-                    inline: true
-                }],
 
-            });
-            if (champ.aura) {
-                embed.addField('Aura:', champ.aura, false);
-            }
-            embed.addField('Books to max skills:', champ.totalBooks, false);
-
+            const skillsEmbeds: MessageEmbed[] = getSkillsEmbeds(champ, false);
             if (otherMatches !== '') {
-                embed.footer = {
-                    text: `Not the right champion? Try one of these searches: ${otherMatches}`
+                for (const s of skillsEmbeds) {
+                    s.footer = {
+                        text: `Not the right champion? Try one of these searches: ${otherMatches}`
+                    }
                 }
             }
-            const skillsEmbeds: MessageEmbed[] = getSkillsEmbeds(champ, false);
             let i = 1;
             for (const s of champ.skills) {
                 row1.addComponents(
@@ -143,10 +69,9 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 i++;
             }
             if (allowShow && showInServer === true) {
-                const statsMessage = await interaction.followUp({ embeds: [embed] });
                 const skillsMessage = await interaction.followUp({ embeds: [skillsEmbeds[0]], components: [row1] });
                 await skillsButtonPagination(interaction.user.id, skillsMessage as Message, skillsEmbeds);
-                await delayDeleteMessages([statsMessage as Message, skillsMessage as Message])
+                await delayDeleteMessages([skillsMessage as Message])
 
             }
             else {
@@ -159,30 +84,29 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 if (interaction.channel.type !== 'DM') {
                     const dmWarn = await interaction.followUp({ embeds: [dmWarnEmbed], components: [inbox] });
                     await delayDeleteMessages([dmWarn as Message], 60 * 1000)
-                    const _ = await interaction.user.send({ embeds: [embed] });
                     const skillsDM = await interaction.user.send({ embeds: [skillsEmbeds[0]], components: [row1] });
                     await skillsButtonPagination(interaction.user.id, skillsDM, skillsEmbeds);
                 }
                 else {
-                    const _ = await interaction.followUp({ embeds: [embed] });
                     const skillsDM = await interaction.followUp({ embeds: [skillsEmbeds[0]], components: [row1] });
                     await skillsButtonPagination(interaction.user.id, skillsDM as Message, skillsEmbeds);
                 }
 
             }
-            return true;
         }
         else {
+
             const fail = await interaction.followUp(`${userMention(interaction.user.id)} I didn't find any matches for your search ${bold(champName)}, please try again.`)
-            return false;
         }
+        return true;
     }
     catch (err) {
         logger.error(err);
+        return false;
     }
 }
 
-export const registerforTesting = false;
+export const registerforTesting = true;
 
 
 

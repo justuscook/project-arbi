@@ -9,7 +9,16 @@ import { uploadImage } from './general/util';
 import { userMention } from '@discordjs/builders';
 import https from 'https';
 import http from 'http';
+import tracer from 'tracer';
+import * as promClient from 'prom-client';
 
+export const logger = tracer.dailyfile({
+    root: './dist/logs',
+    maxLogFiles: 7,
+    allLogsFileName: 'arbi-log',
+    dateformat: 'mm/dd/yyyy HH:MM'
+
+});
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 
@@ -23,9 +32,11 @@ try {
         key: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/privkey.pem'),
         cert: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/fullchain.pem')
     }, app);
+
     httpServer.listen(80, () => {
         console.log('HTTP Server listening on port 80');
     })
+
     httpsServer.listen(443, () => {
         console.log('HTTPS Server listening on port 443');
     })
@@ -37,7 +48,8 @@ catch {
 app.listen(9001, () => {
     console.log('Bot Listening on port 9001 ⚡');
 })
-app.get( '/', (req: Request, res: Response) => {
+
+app.get('/', (req: Request, res: Response) => {
     res.send('Bot online 🤖⚡')
 })
 app.post('/guideUpdate', async (req: Request, res: Response) => {
@@ -124,7 +136,6 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
 
     //console.log(approvedGuides);
 })
-
 client.commands = new Collection();
 const commandFiles = fs.readdirSync(__dirname + '/commands').filter(file => file.endsWith('.js'));
 
@@ -136,6 +147,8 @@ for (const file of commandFiles) {
 client.once('ready', async () => {
     console.log('Ready!');
     await deployCommands();
+    const num = await client.guilds.fetch();
+    bot_guilds_total.set(num.size);
 });
 
 client.on('interactionCreate', async interaction => {
@@ -146,7 +159,14 @@ client.on('interactionCreate', async interaction => {
     if (!command) return;
 
     try {
-        await command.execute(interaction);
+        const commandSuccess: Promise<boolean> = await command.execute(interaction);
+        AddCommandToTotalCommands(command.data.name)
+        if(commandSuccess){
+            AddCommandToTotalSuccessfulCommands(command.data.name);
+        }
+        else{
+            AddCommandToTotalFailedCommands(command.data.name);
+        }
     } catch (error) {
         console.error(error);
         return interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
@@ -154,6 +174,73 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(token);
+
+const register = new promClient.Registry();
+
+const bot_guilds_total: promClient.Gauge<string> = new promClient.Gauge({
+    name: 'bot_guilds_total',
+    help: 'The number of guilds the bot is in when all shards are available.'
+});
+
+const bot_commands_total: promClient.Counter<string> = new promClient.Counter({
+    name: 'bot_commands_total',
+    help: 'The number of commands the bot has processed.',
+    labelNames: ['name']
+});
+
+const bot_commands_successful_total: promClient.Counter<string> = new promClient.Counter({
+    name: 'bot_commands_successful_total',
+    help: 'The number of commands the bot has processed successfully.',
+    labelNames: ['name']
+});
+
+const bot_commands_failed_total: promClient.Counter<string> = new promClient.Counter({
+    name: 'bot_commands_failed_total',
+    help: 'The number of commands the bot has tried to process and failed.',
+    labelNames: ['name']
+});
+
+const bot_guides_successful_total: promClient.Counter<string> = new promClient.Counter({
+    name: 'bot_guides_successful_total',
+    help: 'The number successful guide searches.',
+    labelNames: ['searchTerm']
+})
+
+const bot_guides_failed_total: promClient.Counter<string> = new promClient.Counter({
+    name: 'bot_guides_failed_total',
+    help: 'The number failed guide searches.',
+    labelNames: ['searchTerm']
+})
+
+export function AddCommandToTotalCommands(name: string) {
+    bot_commands_total.labels(name).inc();
+}
+
+export function AddCommandToTotalSuccessfulCommands(name: string) {
+    bot_commands_successful_total.labels(name).inc();
+}
+
+export function AddCommandToTotalFailedCommands(name: string) {
+    bot_commands_failed_total.labels(name).inc();
+}
+/**
+ * Add to successful guide search total.
+ * @param {string} name CHampion name searched.
+ */
+export function AddToSuccessfulGuideSearches(name: string) {
+    bot_guides_successful_total.labels(name).inc();
+}
+/**
+ * Add to failed guides search total.
+ * @param {string} name Champion name searched.   
+ */
+export function AddToFailedGuideSearches(name: string) {
+    bot_guides_failed_total.labels(name).inc();
+}
+
+register.setDefaultLabels({
+    app: 'project-arbi-bot'
+});
 
 async function deployCommands() {
     const commands = [];
@@ -238,4 +325,13 @@ async function deployCommands() {
     })();
 }
 
+setInterval(async () => {    
+    const num = await client.guilds.fetch();
+    bot_guilds_total.set(num.size);
+}, 1.8e+6);
 
+
+app.get('/metrics', async (req, res) => {
+    res.set('Content-Type', promClient.register.contentType)
+    res.end(await promClient.register.metrics())
+});
