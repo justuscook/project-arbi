@@ -151,7 +151,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 const inbox = await inboxLinkButton(interaction.user);
                 const dmWarnEmbed: MessageEmbed = new MessageEmbed(
                     {
-                        description: `${userMention(interaction.user.id)}, ${(allowShow === false && showInServer === true) ? `you can't show commands in this server, only mod in the offical Raid: SL server can.  ` : ``}I have sent the output in a DM, click the button below to check your inbox!`,
+                        description: `${userMention((await interaction.user.fetch()).id)}, ${(allowShow === false && showInServer === true) ? `you can't show commands in this server, only mod in the offical Raid: SL server can.  ` : ``}I have sent the output in a DM, click the button below to check your inbox!`,
                     }
                 )
                 if (interaction.channel.type !== 'DM') {
@@ -167,7 +167,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         }
         else {
 
-            const fail = await interaction.followUp(`${userMention(interaction.user.id)} I didn't find any matches for your search ${bold(champName)}, please try again.`)
+            const fail = await interaction.followUp(`${userMention((await interaction.user.fetch()).id)} I didn't find any matches for your search ${bold(champName)}, please try again.`)
         }
         return true;
     }

@@ -321,12 +321,14 @@ export async function canDM(interaction: CommandInteraction): Promise<boolean> {
     //testing server Role id 227837830704005140
     //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
     if (interaction.guildId === '532196192051003443') {
-        const role = await (await interaction.member.roles as GuildMemberRoleManager).cache.find(x => x.id === '861626304344490034');
-        if (role !== undefined) {
-            return true;
+        if (interaction.guildId === '532196192051003443') {
+            const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034','722765643610587177', '837319225449119785');
+            if (hasRole === false) {
+                return false;
+            }
         }
+        return true;
     }
-    return false;
 }
 
 export async function canShow(interaction: CommandInteraction): Promise<boolean> {
@@ -336,8 +338,8 @@ export async function canShow(interaction: CommandInteraction): Promise<boolean>
     //testing server Role id 227837830704005140
     //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
     if (interaction.guildId === '532196192051003443') {
-        const role = await (await interaction.member.roles as GuildMemberRoleManager).cache.find(x => x.id === '861626304344490034');
-        if (role === undefined) {
+        const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034','722765643610587177', '837319225449119785');
+        if (hasRole === undefined) {
             return false;
         }
     }
@@ -388,8 +390,9 @@ export async function inboxLinkButton(user: User): Promise<MessageActionRow> {
 export async function delayDeleteMessages(messages: Message[], timeout?: number) {
     if (timeout === undefined) timeout = Timeout.Mins15;
     setTimeout(async () => {
-        const chan = await messages[0].channel as TextChannel;
-        await chan.bulkDelete(messages);
+        for(const m of messages){
+            await m.delete();
+        }
     }, timeout);
 
 }
@@ -534,7 +537,7 @@ export function validateGuide(guide: IGuide): string {
     let errors = '';
     for (const g of guide.data) {
         if (g.image === 'failed download') {
-            errors += `age`
+            errors += `Image download failed.  File: ${g.image}\n`
         }
         if (g.desc.length > 2047) {
             errors += `Description to long, check the highlightled portion: ${bold(g.label)}:\n\"${g.desc.slice(2000, 2038)}${bold(g.desc.slice(2038, 2048))}**${g.desc.slice(2048, 2100)}\"\n`;
@@ -707,4 +710,16 @@ export function getSkillsEmbeds(champ: IChampionInfo, avatar: boolean = false): 
         pages.push(embed);
     })
     return pages;
+}
+
+export function SortByOrder(field: any) {
+    return function (a, b) {
+        if (a[field] > b[field]) return 1;
+        if (b[field] > a[field]) return -1;
+        if (a[field] === b[field]) return 0;
+        if (a[field] === undefined && b[field] !== undefined) return 1;
+        if (a[field] !== undefined && b[field] === undefined) return -1;
+        if (a[field] === b[field] == undefined) return 0;
+        return 0;
+    }
 }

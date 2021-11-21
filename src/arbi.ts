@@ -13,7 +13,7 @@ import tracer from 'tracer';
 import * as promClient from 'prom-client';
 
 export const logger = tracer.dailyfile({
-    root: './dist/logs',
+    root: './logs',
     maxLogFiles: 7,
     allLogsFileName: 'arbi-log',
     dateformat: 'mm/dd/yyyy HH:MM'
@@ -25,7 +25,8 @@ const { Routes } = require('discord-api-types/v9');
 const client: any = new Client({ intents: [Intents.FLAGS.GUILDS] });
 const app = express();
 
-app.use(bodyParser.json());
+app.use(express.json());
+
 try {
     const httpServer = http.createServer(app);
     const httpsServer = https.createServer({
@@ -59,7 +60,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     const guideResponse: IGuideResponse = req.body;
     //console.log(guideResponse)
     const row = await getSpreadSheetValues({
-        sheetNameOrRange: `${guideResponse.sheetName}!R${guideResponse.range.rowStart}C${guideResponse.range.columnStart}:R${guideResponse.range.rowEnd}C${17}`,
+        sheetNameOrRange: `${guideResponse.sheetName}!R${guideResponse.range.rowStart}C${guideResponse.range.columnStart}:R${guideResponse.range.rowEnd}C${25}`,
         auth: await getAuthToken(),
         spreadsheetId: guidesSheetID
     });
@@ -70,7 +71,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
         author: guideResponse.data[3],
         rarity: guideResponse.data[7],
         stage: guideResponse.data[6],
-        tag: (dungeonGuide) ? ['dungeon'] : ['champion', guideResponse.data[5]],
+        tag: (dungeonGuide) ? ['dungeon'] : [guideResponse.data[5],'champion' ],
         title: guideResponse.data[4],
         data: []
     }
@@ -96,6 +97,9 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
             label: 'Notes:',
             image: (guideResponse.data[16] !== undefined) ? guideResponse.data[16] : botUpload
         })
+    }
+    if(guideResponse.data[18] !== ''){
+        guide.order = parseInt(guideResponse.data[18]);
     }
     guide.data.push(...guidesSlides);
     const guideErrors = validateGuide(guide);
@@ -149,8 +153,18 @@ client.once('ready', async () => {
     await deployCommands();
     const num = await client.guilds.fetch();
     bot_guilds_total.set(num.size);
-});
+    /*
+    const collection = await connectToCollection('guides');
+    const guides = await collection.find<IGuide>({}).toArray();
+    const authors: Collection<string, number> = new Collection;
+    for(const g of guides){
+        if)
+    }*/
 
+});
+/**
+ * Command/Interaction handler
+ */
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return;
 
@@ -257,19 +271,24 @@ async function deployCommands() {
     }
 
     const rest = new REST({ version: '9' }).setToken(token);
-    /*
+    
         const guilds: Collection<Snowflake, OAuth2Guild> = await client.guilds.fetch();
         for(const g of guilds){
             const guild: Guild = await client.guilds.fetch(g[0])
             const commands = await guild.commands.fetch();
-            const commandToDelete = commands.find(x => x.name === 'ping');
-            await guild.commands.delete(commandToDelete.id);
+            const commandToDelete = commands.find(x => x.name === 'leaderboard');
+            if(commandToDelete === undefined) continue;
+            const ID = commandToDelete.id;
+            await guild.commands.delete(ID);
         }
+        //const deleteCommand= await client.application?.commands.fetch('910998948515282954');
+        //await deleteCommand.delete()
         
+        /*
         if(currentCommands !== undefined){
             console.log(currentCommands)
-        }
-    */
+        }*/
+    
     (async () => {
         try {/*
             const currentCommands: Collection<Snowflake, ApplicationCommand> = await client.application?.commands.fetch();
