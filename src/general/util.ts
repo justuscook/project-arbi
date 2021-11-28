@@ -462,11 +462,15 @@ export function getGuideList(guide_data: IGuide[]): string[] {
  * @returns {Collection} MongoDB collection
  */
 export async function
-    connectToCollection(name: string): Promise<Collection> {
+    connectToDB(): Promise<MongoClient> {
     const uri = `mongodb+srv://arbi:${dbpass}@arbi.g6e2c.mongodb.net/Arbi?retryWrites=true&w=majority`;
     const mongoClient: MongoClient = new MongoClient(uri);
-    await mongoClient.connect();
-    const collection = await mongoClient.db('project-arbi').collection(name);
+    return mongoClient;
+}
+export async function
+    connectToCollection(name: string, client: MongoClient): Promise<Collection> {    
+    await client.connect();
+    const collection = await client.db('project-arbi').collection(name);
     return collection;
 }
 export interface IRange {
@@ -495,9 +499,9 @@ export async function uploadImage(url: string, client: Client, auth): Promise<st
                     responseType: 'arraybuffer',
                 });
                 */
-        const test = url.substring(url.indexOf('=') + 1);
+        const test = url.split('=')[1];
         const response: GaxiosResponse = await drive.files.get({
-            fileId: url.substring(url.indexOf('=') + 1),
+            fileId: url.split('=')[1],
             alt: 'media',
             auth: auth
         }, {
@@ -514,7 +518,7 @@ export async function uploadImage(url: string, client: Client, auth): Promise<st
     }
     catch (err) {
         console.log(err);
-        return 'failed download';
+        return `failed download: ${url}`;
     }
 }
 

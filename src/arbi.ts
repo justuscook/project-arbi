@@ -3,7 +3,7 @@ import fs from 'fs';
 import express, { Response, Request } from 'express';
 import bodyParser from 'body-parser';
 import { clientId, guildIDs, token } from './config.json';
-import { connectToCollection, Data, getAuthToken, getSpreadSheetValues, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
+import { connectToCollection, connectToDB, Data, getAuthToken, getSpreadSheetValues, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
 import { auth } from 'google-auth-library';
 import { uploadImage } from './general/util';
 import { userMention } from '@discordjs/builders';
@@ -71,7 +71,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
         author: guideResponse.data[3],
         rarity: guideResponse.data[7],
         stage: guideResponse.data[6],
-        tag: (dungeonGuide) ? ['dungeon'] : [guideResponse.data[5],'champion' ],
+        tag: (dungeonGuide) ? [guideResponse.data[5], 'dungeon'] : [guideResponse.data[5], 'champion'],
         title: guideResponse.data[4],
         data: []
     }
@@ -91,24 +91,24 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
             label: (dungeonGuide) ? 'Notes:' : 'Masteries:',
             image: (guideResponse.data[13] !== '') ? guideResponse.data[13] : midUpload
         });
-    if (guideResponse.data[14] !== '') {
+    if (guideResponse.data[14].length > 0 ) {
         guidesSlides.push({
             desc: guideResponse.data[14],
             label: 'Notes:',
             image: (guideResponse.data[16] !== undefined) ? guideResponse.data[16] : botUpload
         })
     }
-    if(guideResponse.data[18] !== ''){
+    if (guideResponse.data[18] !== '') {
         guide.order = parseInt(guideResponse.data[18]);
     }
     guide.data.push(...guidesSlides);
     const guideErrors = validateGuide(guide);
     const chan = await client.channels.fetch('898601285748662332') as TextChannel;//guide-submission-reports
     let guider: User;
-    if (guideResponse.sheetName === ('IanK Guides')) {
+    if (guideResponse.user === ('iankyl93@gmail.com')) {
         guider = await client.users.fetch('205448080797990912')//205448080797990912
     }
-    else {
+    else if (guideResponse.user === ('Origin7303@gmail.com')) {
         guider = await client.users.fetch('227837830704005140')//227837830704005140
     }
     if (guideResponse.user === 'mr.justus.cook@gmail.com') {
@@ -124,17 +124,21 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
         return;
     }
     await updateFormat(guideResponse.sheetId, guideResponse.range, auth);
-    const collection = await connectToCollection('guides');
+    const mongoClient = await connectToDB();
+    const collection = await connectToCollection('guides', mongoClient);
     const guides = collection.updateOne(
         { title: guide.title },
         { $set: guide },
         { upsert: true },
         async (err: any, result: any) => {
             if (err) {
-                await chan.send(`╯︿╰ The guide submission/update failed.`)
+                await chan.send(`╯︿╰ The guide submission/update failed.\n${err}`)
             }
-
+            else {
+                await mongoClient.close();
+            }
         });
+    
     //console.log(guide)
     //const approvedGuides = guideRawValues.data.values.filter(x => x[0] === 'TRUE'  && x.length > 1)
 
@@ -175,10 +179,10 @@ client.on('interactionCreate', async interaction => {
     try {
         const commandSuccess: Promise<boolean> = await command.execute(interaction);
         AddCommandToTotalCommands(command.data.name)
-        if(commandSuccess){
+        if (commandSuccess) {
             AddCommandToTotalSuccessfulCommands(command.data.name);
         }
-        else{
+        else {
             AddCommandToTotalFailedCommands(command.data.name);
         }
     } catch (error) {
@@ -271,24 +275,24 @@ async function deployCommands() {
     }
 
     const rest = new REST({ version: '9' }).setToken(token);
-    
-        const guilds: Collection<Snowflake, OAuth2Guild> = await client.guilds.fetch();
-        for(const g of guilds){
-            const guild: Guild = await client.guilds.fetch(g[0])
-            const commands = await guild.commands.fetch();
-            const commandToDelete = commands.find(x => x.name === 'leaderboard');
-            if(commandToDelete === undefined) continue;
-            const ID = commandToDelete.id;
-            await guild.commands.delete(ID);
-        }
-        //const deleteCommand= await client.application?.commands.fetch('910998948515282954');
-        //await deleteCommand.delete()
-        
-        /*
-        if(currentCommands !== undefined){
-            console.log(currentCommands)
-        }*/
-    
+
+    const guilds: Collection<Snowflake, OAuth2Guild> = await client.guilds.fetch();
+    for (const g of guilds) {
+        const guild: Guild = await client.guilds.fetch(g[0])
+        const commands = await guild.commands.fetch();
+        const commandToDelete = commands.find(x => x.name === 'leaderboard');
+        if (commandToDelete === undefined) continue;
+        const ID = commandToDelete.id;
+        await guild.commands.delete(ID);
+    }
+    //const deleteCommand= await client.application?.commands.fetch('910998948515282954');
+    //await deleteCommand.delete()
+
+    /*
+    if(currentCommands !== undefined){
+        console.log(currentCommands)
+    }*/
+
     (async () => {
         try {/*
             const currentCommands: Collection<Snowflake, ApplicationCommand> = await client.application?.commands.fetch();
@@ -344,7 +348,7 @@ async function deployCommands() {
     })();
 }
 
-setInterval(async () => {    
+setInterval(async () => {
     const num = await client.guilds.fetch();
     bot_guilds_total.set(num.size);
 }, 1.8e+6);

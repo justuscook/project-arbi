@@ -42,7 +42,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     if (input.includes('<@')) {
         let userID = input.replace(/\D/g, '');
         userToDM = await interaction.client.users.fetch(userID);
-        input = input.replace('!','');
+        input = input.replace('!', '');
         input = input.replace(`<@${userID}>`, '').trimEnd();
     }
     console.log(input);
@@ -54,13 +54,14 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     .setStyle('LINK')
                     .setURL(`https://discord.com/channels/@me/${await (await interaction.user.createDM()).id}`)
             );
-
-        const collection = await util.connectToCollection('guides');
+        const mongoClient = await util.connectToDB();
+        const collection = await util.connectToCollection('guides', mongoClient);
         const guides = await collection.find<util.IGuide>({}).toArray();
+        await mongoClient.close();
         const phrases = ['early game', 'mid game', 'late game', 'late', 'mid', 'early', 'late game+', 'late game +', 'late game guide', 'late game+ guide'];
         let found: util.IGuide[];
 
-        if ((input.toLowerCase().includes('list') || input === '' ) && !input.toLowerCase().includes('diabolist')) {
+        if ((input.toLowerCase().includes('list') || input === '') && !input.toLowerCase().includes('diabolist')) {
             const listStings = util.getGuideList(guides);
             const genGuidesEmbed = new MessageEmbed()
                 .setTitle('List of general game guides by title:')
@@ -138,13 +139,15 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             );
             embeds[0].setTitle(f.title);
             embeds[1].setTitle(f.title);
-            embeds[2].footer = {
-                text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`
+            if (embeds[2] !== undefined) {
+                embeds[2].footer = {
+                    text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`
+                }
             }
             guideEmbeds.push({
                 topEmbed: embeds[0],
                 midEmbed: embeds[1],
-                botEmbed: (embeds[2]) ? embeds[2] : blackSlideEmbed
+                botEmbed: (embeds[2] !== undefined) ? embeds[2] : blackSlideEmbed
             })
         }
         //console.log(guideEmbeds);
