@@ -32,6 +32,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     let canDM = await util.canDM(interaction);
     let canShow = await util.canShow(interaction);
     let input: string = interaction.options.getString('input');
+    let ogInput = input;
     let showInServer = interaction.options.getBoolean('show_in_server');
     if (input === null) input = 'list';
     if (input.toLowerCase().includes('show')) {
@@ -82,9 +83,15 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 return true;
             }
             else {
-                const dmAlert = await interaction.followUp({ content: `${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.' : ''} I sent the list of guides to you, click the "Inbox" button below to check!`, components: [inbox] });
+                const dmEmbed = new MessageEmbed()
+                    .setDescription(`${interaction.user.toString()}${(showInServer) ? `You can\'t show commands in this server.` : ''} Guide(s) sent, check your "Inbox"!`)
+                    .setAuthor(`/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}`)
+
+                const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
                 const listMessage = await interaction.user.send({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
-                await util.delayDeleteMessages([dmAlert as Message]);
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, 'guide');
+
+
             }
             return true;
         }
@@ -105,6 +112,9 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         const first10orLess: util.IGuide[] = found.filter(x => found.indexOf(x) < 10)
 
         const blackSlideEmbed: MessageEmbed = new MessageEmbed()
+            .setTitle('Blank slide')
+            .setDescription('This is a short guide, nothing in this section!');
+        const botblackSlideEmbed: MessageEmbed = new MessageEmbed()
             .setTitle('Blank slide')
             .setDescription('This is a short guide, nothing in this section!');
         const guideEmbeds: IMessageEmbeds[] = [];
@@ -138,16 +148,19 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             embeds[0].setAuthor(authorsNames, (authors.length > 1) ? 'https://cdn.discordapp.com/attachments/737622176995344485/892856095624810536/Share-damage-2.png' : authors[0].avatarURL()
             );
             embeds[0].setTitle(f.title);
-            embeds[1].setTitle(f.title);
-            if (embeds[2] !== undefined) {
-                embeds[2].footer = {
-                    text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`
-                }
+            if (embeds[1]) {
+                embeds[1].setTitle(f.title);
+            }
+            if (!embeds[2]) {
+                embeds[2] = botblackSlideEmbed;
+            }
+            embeds[2].footer = {
+                text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`
             }
             guideEmbeds.push({
-                topEmbed: embeds[0],
-                midEmbed: embeds[1],
-                botEmbed: (embeds[2] !== undefined) ? embeds[2] : blackSlideEmbed
+                topEmbed: embeds[0],                
+                midEmbed: (embeds[1]) ? embeds[1] : blackSlideEmbed,
+                botEmbed: embeds[2]
             })
         }
         //console.log(guideEmbeds);
@@ -178,8 +191,9 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 //interaction.user.id = userToDM.id;
                 //interaction.channel.id = await (await userToDM.createDM()).id;
                 const guideSend = await interaction.followUp({ content: `I am sending the guide(s) to ${userToDM.toString()}\'s DM\'s!` });
-                await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
+
                 await util.guideButtonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
                 return true;
             }
             else if (canShow && showInServer === true) {
@@ -197,10 +211,16 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 const topCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
-                const dmAlert = await interaction.followUp({ content: `${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`, components: [inbox] });
-                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000);
+                const dmEmbed = new MessageEmbed()
+                    .setDescription(`${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`)
+                    .setAuthor(`/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}`)
+
+                const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
+
                 await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, 'guide');
                 return true;
+
             }
         }
         else {
@@ -211,8 +231,9 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 //interaction.user.id = userToDM.id;
                 //interaction.channel.id = await (await userToDM.createDM()).id;
                 const guideSend = await interaction.followUp({ content: `I am sending the guide(s) to ${userToDM.toString()}\'s DM\'s!` })
-                await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
+
                 await util.guideButtonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
                 return true;
             }
             else if (canShow && showInServer === true) {
@@ -231,14 +252,23 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 const topCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
-                const dmAlert = await interaction.followUp({ content: `${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`, components: [inbox] });
-                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000);
+                const dmEmbed = new MessageEmbed()
+                    .setDescription(`${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''}  Guide(s) sent, check your "Inbox"!`)
+                    .setAuthor(`/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}`)
+
+                const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
+
+
                 await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, 'guide');
                 return true;
+
+
             }
         }
     }
     catch (err) {
+        interaction.followUp('There was an error in your guide search, it It logged and we are looking into it!  Please use /support and ask for help with your issue if it keeps happening.');
         console.log(err)
         return false;
 

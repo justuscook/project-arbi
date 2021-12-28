@@ -13,6 +13,8 @@ import { dbpass } from '../config.json';
 import { GaxiosResponse } from "gaxios";
 import { content } from "googleapis/build/src/apis/content";
 import { distance } from 'fastest-levenshtein';
+import { client } from "../arbi";
+import { text } from "body-parser";
 
 /*
 export interface ICommand {
@@ -322,7 +324,7 @@ export async function canDM(interaction: CommandInteraction): Promise<boolean> {
     //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
     if (interaction.guildId === '532196192051003443') {
         if (interaction.guildId === '532196192051003443') {
-            const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034','722765643610587177', '837319225449119785');
+            const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785');
             if (hasRole === false) {
                 return false;
             }
@@ -338,7 +340,7 @@ export async function canShow(interaction: CommandInteraction): Promise<boolean>
     //testing server Role id 227837830704005140
     //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
     if (interaction.guildId === '532196192051003443') {
-        const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034','722765643610587177', '837319225449119785');
+        const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785');
         if (hasRole === undefined) {
             return false;
         }
@@ -387,14 +389,18 @@ export async function inboxLinkButton(user: User): Promise<MessageActionRow> {
  * @param {Message[]} messages Array of messages to delete
  * @param {number} timeout Number of milliseconds to wait before deleteing messages.  Defaults to 15 mins.
  */
-export async function delayDeleteMessages(messages: Message[], timeout?: number) {
-    if (timeout === undefined) timeout = Timeout.Mins15;
-    setTimeout(async () => {
-        for(const m of messages){
-            await m.delete();
-        }
-    }, timeout);
+export async function delayDeleteMessages(messages: Message[], timeout?: number, command?: string) {
+    if (command !== undefined && command === 'guide' && messages[0].guildId === '532196192051003443') {
 
+
+        if (timeout === undefined) timeout = Timeout.Mins15;
+        setTimeout(async () => {
+            for (const m of messages) {
+                await m.delete();
+            }
+        }, timeout);
+    }
+    return;
 }
 
 export async function GetAuthor(client: Client, authorIDs: string[] | string): Promise<User[]> {
@@ -468,7 +474,7 @@ export async function
     return mongoClient;
 }
 export async function
-    connectToCollection(name: string, client: MongoClient): Promise<Collection> {    
+    connectToCollection(name: string, client: MongoClient): Promise<Collection> {
     await client.connect();
     const collection = await client.db('project-arbi').collection(name);
     return collection;
@@ -553,7 +559,7 @@ export function validateGuide(guide: IGuide): string {
 
 export interface IChampionInfo {
     name: string,
-    key: string,
+    key?: string,
     id: string,
     hp: string,
     def: string,
@@ -570,7 +576,8 @@ export interface IChampionInfo {
     aura?: string,
     cheal: string,
     skills?: ISkill[],
-    totalBooks?: string
+    totalBooks?: string,
+    avatar?: string
 }
 
 export interface ISkill {
@@ -726,4 +733,32 @@ export function SortByOrder(field: any) {
         if (a[field] === b[field] == undefined) return 0;
         return 0;
     }
+}
+export async function getUserNames(users: Map<string, string>): Promise<Map<User, string>> {
+    const userMap = new Map<User, string>();
+
+    for (const u of users) {
+        let user: User;
+        try {
+            user = client.users.fetch(u[0])
+            userMap.set(user, u[1])
+        }
+        catch {
+            user = client.user;
+        }
+    }
+    return userMap;
+}
+
+export interface ICommandInfo {
+    name: string,
+    execute: any,
+    options?: any
+}
+
+export function getInput(input: string): string{
+    const content = input.split(' ');
+    content.splice(0,2);
+    return content.join(' ');
+
 }

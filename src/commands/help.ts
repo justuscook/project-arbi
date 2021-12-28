@@ -70,7 +70,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         }
         else {
             console.log('test')
-            if ( interaction.channel !== null) {
+            if (interaction.channel !== null) {
                 const help = await interaction.followUp({ content: `${userMention((await interaction.user.fetch()).id)}${(showInServer) ? 'You can\'t show commands in this server.' : ''} I sent my help command output to your inbox, click below to check!`, components: [await inboxLinkButton(interaction.user)] })
                 await util.delayDeleteMessages([help as Message])
             }

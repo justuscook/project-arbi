@@ -1,4 +1,4 @@
-import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, Intents, ApplicationCommandResolvable, Util, TextChannel, User } from 'discord.js';
+import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, Intents, ApplicationCommandResolvable, Util, TextChannel, User, Message, Interaction, MessageEmbed } from 'discord.js';
 import fs from 'fs';
 import express, { Response, Request } from 'express';
 import bodyParser from 'body-parser';
@@ -12,6 +12,9 @@ import http from 'http';
 import tracer from 'tracer';
 import * as promClient from 'prom-client';
 
+export const superUsers =  ['227837830704005140','269643701888745474','205448080797990912']
+
+
 export const logger = tracer.dailyfile({
     root: './logs',
     maxLogFiles: 7,
@@ -22,7 +25,17 @@ export const logger = tracer.dailyfile({
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 
-const client: any = new Client({ intents: [Intents.FLAGS.GUILDS] });
+export const client: any = new Client({
+    intents:
+        [
+            Intents.FLAGS.GUILDS,
+            Intents.FLAGS.GUILD_MESSAGES,
+            Intents.FLAGS.DIRECT_MESSAGES
+        ],
+    partials: [
+        'CHANNEL'
+    ]
+});
 const app = express();
 
 app.use(express.json());
@@ -60,7 +73,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     const guideResponse: IGuideResponse = req.body;
     //console.log(guideResponse)
     const row = await getSpreadSheetValues({
-        sheetNameOrRange: `${guideResponse.sheetName}!R${guideResponse.range.rowStart}C${guideResponse.range.columnStart}:R${guideResponse.range.rowEnd}C${25}`,
+        sheetNameOrRange: `${guideResponse.sheetName}!R${guideResponse.range.rowStart}C${1}:R${guideResponse.range.rowEnd}C${25}`,
         auth: await getAuthToken(),
         spreadsheetId: guidesSheetID
     });
@@ -68,7 +81,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     let dungeonGuide = false;
     if (guideResponse.data[1] === 'TRUE') dungeonGuide = true;
     let guide: IGuide = {
-        author: guideResponse.data[3],
+        author: guideResponse.data[3].split(', '),
         rarity: guideResponse.data[7],
         stage: guideResponse.data[6],
         tag: (dungeonGuide) ? [guideResponse.data[5], 'dungeon'] : [guideResponse.data[5], 'champion'],
@@ -84,18 +97,18 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
         {
             desc: guideResponse.data[8],
             label: guideResponse.data[4],
-            image: (guideResponse.data[10] !== '') ? guideResponse.data[10] : topUpload
+            image: (guideResponse.data[10]) ? guideResponse.data[10] : topUpload
         },
         {
             desc: guideResponse.data[11],
             label: (dungeonGuide) ? 'Notes:' : 'Masteries:',
-            image: (guideResponse.data[13] !== '') ? guideResponse.data[13] : midUpload
+            image: (guideResponse.data[13]) ? guideResponse.data[13] : midUpload
         });
-    if (guideResponse.data[14].length > 0 ) {
+    if (guideResponse.data[14].length > 0) {
         guidesSlides.push({
             desc: guideResponse.data[14],
             label: 'Notes:',
-            image: (guideResponse.data[16] !== undefined) ? guideResponse.data[16] : botUpload
+            image: (guideResponse.data[16]) ? guideResponse.data[16] : botUpload
         })
     }
     if (guideResponse.data[18] !== '') {
@@ -105,17 +118,20 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     const guideErrors = validateGuide(guide);
     const chan = await client.channels.fetch('898601285748662332') as TextChannel;//guide-submission-reports
     let guider: User;
-    if (guideResponse.user === ('iankyl93@gmail.com')) {
-        guider = await client.users.fetch('205448080797990912')//205448080797990912
-    }
-    else if (guideResponse.user === ('Origin7303@gmail.com')) {
-        guider = await client.users.fetch('227837830704005140')//227837830704005140
-    }
-    if (guideResponse.user === 'mr.justus.cook@gmail.com') {
-        guider = await client.users.fetch('269643701888745474')//269643701888745474
+    if (guideResponse.user === '') guideResponse.user = 'noPing';
+    if (guideResponse.user !== 'noPing') {
+        if (guideResponse.user === ('iankyl93@gmail.com')) {
+            guider = await client.users.fetch('205448080797990912')//205448080797990912
+        }
+        if (guideResponse.user === ('Origin7303@gmail.com')) {
+            guider = await client.users.fetch('227837830704005140')//227837830704005140
+        }
+        if (guideResponse.user === 'mr.justus.cook@gmail.com') {
+            guider = await client.users.fetch('269643701888745474')//269643701888745474
+        }
     }
     if (guideErrors.length < 1) {
-        await chan.send(`${userMention(guider.id)}, Guide ${guide.title} has no errors! Submitting the guide now!`);
+        await chan.send(`${(guideResponse.user !== 'noPing') ? userMention(guider.id) : 'Hey guys'}, Guide ${guide.title} has no errors! Submitting the guide now!`);
 
     }
     else {
@@ -138,12 +154,21 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
                 await mongoClient.close();
             }
         });
-    
+
     //console.log(guide)
     //const approvedGuides = guideRawValues.data.values.filter(x => x[0] === 'TRUE'  && x.length > 1)
 
     //console.log(approvedGuides);
 })
+
+client.atCommands = new Collection();
+const atCommandFiles = fs.readdirSync(__dirname + '/atCommands').filter(file => file.endsWith('.js'));
+
+for (const file of atCommandFiles) {
+    const command = require(__dirname + `/atCommands/${file}`).default;
+    client.atCommands.set(command.name, command);
+}
+
 client.commands = new Collection();
 const commandFiles = fs.readdirSync(__dirname + '/commands').filter(file => file.endsWith('.js'));
 
@@ -166,9 +191,55 @@ client.once('ready', async () => {
     }*/
 
 });
+client.on('messageCreate', async (message: Message) => {
+    if(!superUsers.includes(message.author.id)) return;
+    if(!message.mentions.has(client.user.id)) return;
+    if (message.content.includes("@here") || message.content.includes("@everyone")) return;
+    const commandName = message.content.split(' ')[1];
+    const command = client.atCommands.get(commandName)
+    if(!command) return;
+    else{
+        const commandSuccesss: Promise<boolean> = await command.execute(message);
+    }
+    /*
+    if (message.mentions.has(client.user.id)) {
+        if (message.content.split(' ')[1] !== 'help') {
+            return;
+        }
+        console.log(message.content)
+        const commands = await client.application.commands.fetch();
+        const embed: MessageEmbed = new MessageEmbed({
+            description: `${userMention((await message.author.fetch()).id)} Here is a list of my commands!`
+        });
+        const commandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith('.js'));
+        interface commandUsage {
+            usage: string,
+            name: string
+        }
+        const commandUsage: commandUsage[] = [];
+
+        for (const file of commandFiles) {
+            const command = require(__dirname + `//${file}`);
+            commandUsage.push({
+                name: file.replace('.js', '').toLowerCase(),
+                usage: command.usage
+            })
+            //console.lo
+        }
+        for (const c of commands) {
+            embed.fields.push({
+                name: c[1].name,
+                value: `Description: ${c[1].description}`,
+                inline: false
+            });
+        }
+        await message.reply({ embeds: [embed] });
+    }*/
+})
 /**
  * Command/Interaction handler
  */
+
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return;
 
