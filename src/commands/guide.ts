@@ -24,6 +24,11 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
+    const commandText = await interaction.toString();
+    const commandTextEmbed = new MessageEmbed()
+        .setAuthor(commandText)
+        .setDescription('Processing your command now!');
+    const commandTextMessage = await interaction.followUp({ embeds: [commandTextEmbed] });
     let row1: MessageActionRow = new MessageActionRow;
     let row2: MessageActionRow = new MessageActionRow;
     const embeds: IMessageEmbeds[] = [];
@@ -89,7 +94,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
 
                 const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
                 const listMessage = await interaction.user.send({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
-                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, 'guide');
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
 
 
             }
@@ -158,7 +163,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`
             }
             guideEmbeds.push({
-                topEmbed: embeds[0],                
+                topEmbed: embeds[0],
                 midEmbed: (embeds[1]) ? embeds[1] : blackSlideEmbed,
                 botEmbed: embeds[2]
             })
@@ -213,12 +218,12 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
                 const dmEmbed = new MessageEmbed()
                     .setDescription(`${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`)
-                    .setAuthor(`/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}`)
+
 
                 const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
 
                 await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, 'guide');
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
                 return true;
 
             }
@@ -260,7 +265,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
 
 
                 await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, 'guide');
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
                 return true;
 
 
@@ -275,4 +280,4 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     }
 }
 
-export const registerforTesting = false;
+export const registerforTesting = true;

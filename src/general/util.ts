@@ -389,9 +389,8 @@ export async function inboxLinkButton(user: User): Promise<MessageActionRow> {
  * @param {Message[]} messages Array of messages to delete
  * @param {number} timeout Number of milliseconds to wait before deleteing messages.  Defaults to 15 mins.
  */
-export async function delayDeleteMessages(messages: Message[], timeout?: number, command?: string) {
-    if (command !== undefined && command === 'guide' && messages[0].guildId === '532196192051003443') {
-
+export async function delayDeleteMessages(messages: Message[], timeout?: number, showInServer?: boolean) {
+    if (showInServer !== undefined && showInServer === true && messages[0].guildId === '532196192051003443') {
 
         if (timeout === undefined) timeout = Timeout.Mins15;
         setTimeout(async () => {

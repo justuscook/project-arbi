@@ -17,7 +17,7 @@ const commandFile: ICommandInfo = {
                 message.reply(`${userMention(message.author.id)} I couldnt tell what number to use for the order!`)
                 return true;
             }*/
-            const found: IGuide[] = fuzzySearch(guides, search, ['tag']);
+            const found: IGuide[] = fuzzySearch(guides, search, ['tag', 'title']);
             let titles: Map<string, string> = new Map();
             found.sort(SortByOrder('order'));
             let i = 0;

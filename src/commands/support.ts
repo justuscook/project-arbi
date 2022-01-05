@@ -24,7 +24,7 @@ export async function execute(interaction: CommandInteraction) : Promise<boolean
     }
 }
 
-export const registerforTesting = true;
+export const registerforTesting = false;
 
 
 

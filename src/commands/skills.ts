@@ -6,9 +6,10 @@ import { logger } from '../arbi';
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('skills')
-
-    .addStringOption(option => option.setName('champion_name')
-        .setDescription('Enter a champions name').setRequired(true))
+    .addStringOption(option => option
+        .setName('champion_name')
+        .setDescription('Enter a champions name')
+        .setRequired(true))
     .addBooleanOption(option => option
         .setDescription('Wether to show the command in the channel or not.')
         .setName('show_in_server')
@@ -108,7 +109,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     }
 }
 
-export const registerforTesting = true;
+export const registerforTesting = false;
 
 
 

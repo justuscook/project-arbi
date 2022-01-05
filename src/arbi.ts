@@ -2,7 +2,7 @@ import { ApplicationCommand, Client, ClientApplication, Collection, CommandInter
 import fs from 'fs';
 import express, { Response, Request } from 'express';
 import bodyParser from 'body-parser';
-import { clientId, guildIDs, token } from './config.json';
+import { clientId, testClientId, guildIDs, token, testToken } from './config.json';
 import { connectToCollection, connectToDB, Data, getAuthToken, getSpreadSheetValues, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
 import { auth } from 'google-auth-library';
 import { uploadImage } from './general/util';
@@ -12,8 +12,10 @@ import http from 'http';
 import tracer from 'tracer';
 import * as promClient from 'prom-client';
 
-export const superUsers =  ['227837830704005140','269643701888745474','205448080797990912']
+const TOKEN = token;//change before pushing live!
+const CLIENTID = clientId;
 
+export const superUsers = ['227837830704005140', '269643701888745474', '205448080797990912']
 
 export const logger = tracer.dailyfile({
     root: './logs',
@@ -192,13 +194,13 @@ client.once('ready', async () => {
 
 });
 client.on('messageCreate', async (message: Message) => {
-    if(!superUsers.includes(message.author.id)) return;
-    if(!message.mentions.has(client.user.id)) return;
+    if (!superUsers.includes(message.author.id)) return;
+    if (!message.mentions.has(client.user.id)) return;
     if (message.content.includes("@here") || message.content.includes("@everyone")) return;
     const commandName = message.content.split(' ')[1];
     const command = client.atCommands.get(commandName)
-    if(!command) return;
-    else{
+    if (!command) return;
+    else {
         const commandSuccesss: Promise<boolean> = await command.execute(message);
     }
     /*
@@ -262,7 +264,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-client.login(token);
+client.login(TOKEN);
 
 const register = new promClient.Registry();
 
@@ -338,24 +340,25 @@ async function deployCommands() {
 
     for (const file of commandFiles) {
         const command = require(__dirname + `/commands/${file}`);
-        if (command.registerforTesting === true)
-            if (command.registerforTesting === true) {
-                commands.push(command.data.toJSON());
-            }
+        //command.registerforTesting = true;
+        if (command.registerforTesting === true) {
+            commands.push(command.data.toJSON());
+        }
         globalCommands.push(command.data.toJSON());
     }
 
-    const rest = new REST({ version: '9' }).setToken(token);
-
-    const guilds: Collection<Snowflake, OAuth2Guild> = await client.guilds.fetch();
-    for (const g of guilds) {
-        const guild: Guild = await client.guilds.fetch(g[0])
-        const commands = await guild.commands.fetch();
-        const commandToDelete = commands.find(x => x.name === 'leaderboard');
-        if (commandToDelete === undefined) continue;
-        const ID = commandToDelete.id;
-        await guild.commands.delete(ID);
-    }
+    const rest = new REST({ version: '9' }).setToken(TOKEN);
+    /*
+        const guilds: Collection<Snowflake, OAuth2Guild> = await client.guilds.fetch();
+        for (const g of guilds) {
+            const guild: Guild = await client.guilds.fetch(g[0])
+            const commands = await guild.commands.fetch();
+            const commandToDelete = commands.find(x => x.name === 'leaderboard');
+            if (commandToDelete === undefined) continue;
+            const ID = commandToDelete.id;
+            await guild.commands.delete(ID);
+        }
+        */
     //const deleteCommand= await client.application?.commands.fetch('910998948515282954');
     //await deleteCommand.delete()
 
@@ -379,7 +382,7 @@ async function deployCommands() {
             }*/
             if (globalCommands.length > 0) {
                 const responseGlobal = await rest.put(
-                    Routes.applicationCommands(clientId),
+                    Routes.applicationCommands(CLIENTID),
                     { body: globalCommands },
                 );
 
@@ -395,7 +398,7 @@ async function deployCommands() {
             console.log(`Successfully registered application commands globally!`);
             for (const g of guildIDs) {
                 const response = await rest.put(
-                    Routes.applicationGuildCommands(clientId, g),
+                    Routes.applicationGuildCommands(CLIENTID, g),
                     { body: commands },
                 );
                 const guild: Guild = await client.guilds.cache.get(g);
