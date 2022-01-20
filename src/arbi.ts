@@ -12,6 +12,9 @@ import http from 'http';
 import tracer from 'tracer';
 import * as promClient from 'prom-client';
 
+
+
+
 const TOKEN = token;//change before pushing live!
 const CLIENTID = clientId;
 
@@ -81,15 +84,17 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     });
     guideResponse.data = row.data.values[0];
     let dungeonGuide = false;
+    let tags = [...guideResponse.data[5].split(',').map(part => part.trim()).slice(1)]
     if (guideResponse.data[1] === 'TRUE') dungeonGuide = true;
     let guide: IGuide = {
         author: guideResponse.data[3].split(', '),
         rarity: guideResponse.data[7],
         stage: guideResponse.data[6],
-        tag: (dungeonGuide) ? [guideResponse.data[5], 'dungeon'] : [guideResponse.data[5], 'champion'],
+        tag: (dungeonGuide) ? (guideResponse.data[7]) ? [tags[0], 'dungeon', 'champion', ...tags.slice(1)]: [guideResponse.data[5], 'dungeon'] : [tags[0], 'champion'],
         title: guideResponse.data[4],
         data: []
     }
+    guide.tag = guide.tag.filter(x => x !== undefined);
 
     const guidesSlides: Data[] = []
     const topUpload = await uploadImage(guideResponse.data[9], client, auth);

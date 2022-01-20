@@ -10,23 +10,25 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
         .setName('input')
         .setDescription('Enter a champions name or game location.  Can also be \'show\' and @mentions.')
         .setRequired(true))
-    .addBooleanOption(option => option
-        .setDescription('Whether to show the command in the channel or not.')
-        .setName('show_in_server')
-        .setRequired(false)
-    )
-    .addUserOption(option => option
-        .setName('user_to_dm')
-        .setRequired(false)
-        .setDescription('Only for Raid: SL offical server mods, DM\'s guides to users')
-    )
+    /*
+.addBooleanOption(option => option
+    .setDescription('Whether to show the command in the channel or not.')
+    .setName('show_in_server')
+    .setRequired(false)
+)
+.addUserOption(option => option
+    .setName('user_to_dm')
+    .setRequired(false)
+    .setDescription('Only for Raid: SL offical server mods, DM\'s guides to users')
+)
+*/
     .setDescription('Search for guides by champion or dungeon name.')
 
 export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
     const commandText = await interaction.toString();
     const commandTextEmbed = new MessageEmbed()
-        .setAuthor(commandText)
+        .setAuthor({ name: commandText })
         .setDescription('Processing your command now!');
     const commandTextMessage = await interaction.followUp({ embeds: [commandTextEmbed] });
     let row1: MessageActionRow = new MessageActionRow;
@@ -46,12 +48,12 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     }//const regexCheck = /<@(!|)userID>/gim;
     //if (regexCheck.exec(x) !== null) {}
     if (input.includes('<@')) {
-        let userID = input.replace(/\D/g, '');
+        const data = input.match(new RegExp("(.+) <@!([^>]+)"));
+        const userID = data[2];
         userToDM = await interaction.client.users.fetch(userID);
-        input = input.replace('!', '');
-        input = input.replace(`<@${userID}>`, '').trimEnd();
+        input = data[1];
     }
-    console.log(input);
+    //console.log(input);
     try {
         const inbox = new MessageActionRow()
             .addComponents(
@@ -90,7 +92,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             else {
                 const dmEmbed = new MessageEmbed()
                     .setDescription(`${interaction.user.toString()}${(showInServer) ? `You can\'t show commands in this server.` : ''} Guide(s) sent, check your "Inbox"!`)
-                    .setAuthor(`/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}`)
+                    .setAuthor({ name: `/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}` })
 
                 const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
                 const listMessage = await interaction.user.send({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
@@ -150,7 +152,10 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             for (const a of authors) {
                 authorsNames += `${a.username}#${a.discriminator} `;
             }
-            embeds[0].setAuthor(authorsNames, (authors.length > 1) ? 'https://cdn.discordapp.com/attachments/737622176995344485/892856095624810536/Share-damage-2.png' : authors[0].avatarURL()
+            embeds[0].setAuthor({
+                name: authorsNames,
+                iconURL: (authors.length > 1) ? 'https://cdn.discordapp.com/attachments/737622176995344485/892856095624810536/Share-damage-2.png' : authors[0].avatarURL()
+            }
             );
             embeds[0].setTitle(f.title);
             if (embeds[1]) {
@@ -259,25 +264,25 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
                 const dmEmbed = new MessageEmbed()
                     .setDescription(`${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''}  Guide(s) sent, check your "Inbox"!`)
-                    .setAuthor(`/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}`)
+                    .setAuthor({ name: `/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}`})
 
-                const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
-
-
-                await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
-                return true;
+            const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
 
 
-            }
+            await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+            await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
+            return true;
+
+
         }
     }
-    catch (err) {
-        interaction.followUp('There was an error in your guide search, it It logged and we are looking into it!  Please use /support and ask for help with your issue if it keeps happening.');
-        console.log(err)
-        return false;
-
     }
+    catch (err) {
+    interaction.followUp('There was an error in your guide search, it It logged and we are looking into it!  Please use /support and ask for help with your issue if it keeps happening.');
+    console.log(err)
+    return false;
+
+}
 }
 
 export const registerforTesting = true;

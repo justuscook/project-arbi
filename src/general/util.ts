@@ -324,7 +324,7 @@ export async function canDM(interaction: CommandInteraction): Promise<boolean> {
     //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
     if (interaction.guildId === '532196192051003443') {
         if (interaction.guildId === '532196192051003443') {
-            const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785');
+            const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785', '550640875407933440');
             if (hasRole === false) {
                 return false;
             }
@@ -340,7 +340,7 @@ export async function canShow(interaction: CommandInteraction): Promise<boolean>
     //testing server Role id 227837830704005140
     //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
     if (interaction.guildId === '532196192051003443') {
-        const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785');
+        const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785','550640875407933440');
         if (hasRole === undefined) {
             return false;
         }
