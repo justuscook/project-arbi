@@ -26,11 +26,13 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
+    /*
     const commandText = await interaction.toString();
     const commandTextEmbed = new MessageEmbed()
         .setAuthor({ name: commandText })
         .setDescription('Processing your command now!');
     const commandTextMessage = await interaction.followUp({ embeds: [commandTextEmbed] });
+    */
     let row1: MessageActionRow = new MessageActionRow;
     let row2: MessageActionRow = new MessageActionRow;
     const embeds: IMessageEmbeds[] = [];
@@ -48,7 +50,8 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     }//const regexCheck = /<@(!|)userID>/gim;
     //if (regexCheck.exec(x) !== null) {}
     if (input.includes('<@')) {
-        const data = input.match(new RegExp("(.+) <@!([^>]+)"));
+        input = input.replace(/!/g ,'');
+        const data = input.match(new RegExp("(.+) <@([^>]+)"));
         const userID = data[2];
         userToDM = await interaction.client.users.fetch(userID);
         input = data[1];
@@ -285,4 +288,4 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
 }
 }
 
-export const registerforTesting = true;
+export const registerforTesting = false;

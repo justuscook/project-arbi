@@ -341,7 +341,7 @@ export async function canShow(interaction: CommandInteraction): Promise<boolean>
     //testing server Role id 227837830704005140
     //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
     if (interaction.guildId === '532196192051003443') {
-        const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785','550640875407933440');
+        const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785', '550640875407933440');
         if (hasRole === undefined) {
             return false;
         }
@@ -756,9 +756,9 @@ export interface ICommandInfo {
     options?: any
 }
 
-export function getInput(input: string): string{
+export function getInput(input: string): string {
     const content = input.split(' ');
-    content.splice(0,2);
+    content.splice(0, 2);
     return content.join(' ');
 
 }
@@ -766,22 +766,27 @@ interface LeaderboardUser {
     username: string,
     numberOfGuides: number
 }
-async function getLeaderboard(){
+export async function getLeaderboard(): Promise<Map<string, number>> {
     const mongoClient = await connectToDB();
-        const collection = await connectToCollection('guides', mongoClient);
-        const guides = await collection.find<IGuide>({}).toArray();
-        let leaderboard: Map<string,number> = new Map<string, number>();
-        for(const g of guides){
-            if(Array.isArray(g.author)){
-                for(const a of g.author){
-                    if(leaderboard.has(a)){
-                        leaderboard.get(a)
-                    }
+    const collection = await connectToCollection('guides', mongoClient);
+    const guides = await collection.find<IGuide>({}).toArray();
+    let leaderboardByID: Map<string, number> = new Map<string, number>();
+    for (const g of guides) {
+        if (Array.isArray(g.author)) {
+            for (const a of g.author) {
+                if (leaderboardByID.has(a)) {
+                    leaderboardByID.set(a, leaderboardByID.get(a) + 1)
                 }
             }
-            else{
-
-            }
-            
         }
+        else {
+            leaderboardByID.set(g.author, 1)
+        }
+    }
+    let leaderboardByUserName: Map<string, number> = new Map<string, number>();
+    leaderboardByID.forEach((v,k) => {
+        const user: User = client.users.fetch(k);
+        leaderboardByUserName.set(`${user.username}#${user.discriminator}`,v)
+    })
+    return leaderboardByUserName;
 }

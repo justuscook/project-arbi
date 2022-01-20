@@ -3,7 +3,7 @@ import fs from 'fs';
 import express, { Response, Request } from 'express';
 import bodyParser from 'body-parser';
 import { clientId, testClientId, guildIDs, token, testToken } from './config.json';
-import { connectToCollection, connectToDB, Data, getAuthToken, getSpreadSheetValues, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
+import { connectToCollection, connectToDB, Data, getAuthToken, getLeaderboard, getSpreadSheetValues, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
 import { auth } from 'google-auth-library';
 import { uploadImage } from './general/util';
 import { userMention } from '@discordjs/builders';
@@ -12,12 +12,9 @@ import http from 'http';
 import tracer from 'tracer';
 import * as promClient from 'prom-client';
 
-
-
-
 const TOKEN = token;//change before pushing live!
 const CLIENTID = clientId;
-
+export let leaderboard: Map<string,number>;
 export const superUsers = ['227837830704005140', '269643701888745474', '205448080797990912']
 
 export const logger = tracer.dailyfile({
@@ -189,6 +186,12 @@ client.once('ready', async () => {
     await deployCommands();
     const num = await client.guilds.fetch();
     bot_guilds_total.set(num.size);
+    leaderboard = await getLeaderboard();
+    console.log(`Leaderboard set!`);
+    setTimeout(async () => {
+        leaderboard  = await getLeaderboard();
+        console
+    }, 900000 );
     /*
     const collection = await connectToCollection('guides');
     const guides = await collection.find<IGuide>({}).toArray();
@@ -198,6 +201,9 @@ client.once('ready', async () => {
     }*/
 
 });
+
+
+
 client.on('messageCreate', async (message: Message) => {
     if (!superUsers.includes(message.author.id)) return;
     if (!message.mentions.has(client.user.id)) return;
