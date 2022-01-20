@@ -15,6 +15,7 @@ import { content } from "googleapis/build/src/apis/content";
 import { distance } from 'fastest-levenshtein';
 import { client } from "../arbi";
 import { text } from "body-parser";
+import { isArray } from "util";
 
 /*
 export interface ICommand {
@@ -760,4 +761,27 @@ export function getInput(input: string): string{
     content.splice(0,2);
     return content.join(' ');
 
+}
+interface LeaderboardUser {
+    username: string,
+    numberOfGuides: number
+}
+async function getLeaderboard(){
+    const mongoClient = await connectToDB();
+        const collection = await connectToCollection('guides', mongoClient);
+        const guides = await collection.find<IGuide>({}).toArray();
+        let leaderboard: Map<string,number> = new Map<string, number>();
+        for(const g of guides){
+            if(Array.isArray(g.author)){
+                for(const a of g.author){
+                    if(leaderboard.has(a)){
+                        leaderboard.get(a)
+                    }
+                }
+            }
+            else{
+
+            }
+            
+        }
 }
