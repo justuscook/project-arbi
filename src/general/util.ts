@@ -13,7 +13,7 @@ import { dbpass } from '../config.json';
 import { GaxiosResponse } from "gaxios";
 import { content } from "googleapis/build/src/apis/content";
 import { distance } from 'fastest-levenshtein';
-import { client } from "../arbi";
+import { client, leaderboard } from "../arbi";
 import { text } from "body-parser";
 import { isArray } from "util";
 
@@ -770,6 +770,7 @@ export async function getLeaderboard(): Promise<Map<string, number>> {
     const mongoClient = await connectToDB();
     const collection = await connectToCollection('guides', mongoClient);
     const guides = await collection.find<IGuide>({}).toArray();
+    console.log(`Number of guides: ${guides.length}`);
     let leaderboardByID: Map<string, number> = new Map<string, number>();
     for (const g of guides) {
         if (Array.isArray(g.author)) {
@@ -784,9 +785,19 @@ export async function getLeaderboard(): Promise<Map<string, number>> {
         }
     }
     let leaderboardByUserName: Map<string, number> = new Map<string, number>();
-    leaderboardByID.forEach((v,k) => {
-        const user: User = client.users.fetch(k);
+    const sorted = (new Map([...leaderboardByID.entries()].sort((a,b) => b[1]-a[1])));
+    console.log(`Sorted:\n${sorted}`)
+    for(const s of sorted){
+        let user: User = await client.users.fetch(s[0]);
+        leaderboardByUserName.set(`${user.username}#${user.discriminator}`,s[1])
+    }
+    
+    /*
+    leaderboardByID.forEach(async (v,k) => {
+        const user: User = await client.users.fetch(k);
+        console.log(k);
         leaderboardByUserName.set(`${user.username}#${user.discriminator}`,v)
-    })
+    })*/
+    console.log(leaderboardByUserName);
     return leaderboardByUserName;
 }

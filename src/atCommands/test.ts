@@ -7,6 +7,7 @@ const commandFile: ICommandInfo = {
     name: 'test',
     execute: async (message: Message): Promise<boolean> => {
         console.log(leaderboard);
+        message.reply('Test command complete!')
         return true;
     }
 }

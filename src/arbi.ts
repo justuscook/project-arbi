@@ -190,7 +190,7 @@ client.once('ready', async () => {
     console.log(`Leaderboard set!`);
     setTimeout(async () => {
         leaderboard  = await getLeaderboard();
-        console
+        console.log(leaderboard);
     }, 900000 );
     /*
     const collection = await connectToCollection('guides');
