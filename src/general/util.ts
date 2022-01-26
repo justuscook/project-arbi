@@ -13,8 +13,9 @@ import { dbpass } from '../config.json';
 import { GaxiosResponse } from "gaxios";
 import { content } from "googleapis/build/src/apis/content";
 import { distance } from 'fastest-levenshtein';
-import { client } from "../arbi";
+import { client, leaderboard } from "../arbi";
 import { text } from "body-parser";
+import { isArray } from "util";
 
 /*
 export interface ICommand {
@@ -316,31 +317,30 @@ export function tolower(test: string): string {
     return test.toLowerCase();
 }
 
-export async function canDM(interaction: CommandInteraction): Promise<boolean> {
+export async function canDM(interaction: CommandInteraction | Message): Promise<boolean> {
     //Raid Server ID 532196192051003443
     //Mod team role ID 861626304344490034
     //testing server ID 647916859718369303
     //testing server Role id 227837830704005140
     //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
     if (interaction.guildId === '532196192051003443') {
-        if (interaction.guildId === '532196192051003443') {
-            const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785');
-            if (hasRole === false) {
-                return false;
-            }
+        const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785', '550640875407933440');
+        if (hasRole === false) {
+            return false;
         }
-        return true;
     }
+    return true;
 }
 
-export async function canShow(interaction: CommandInteraction): Promise<boolean> {
+
+export async function canShow(interaction: CommandInteraction | Message): Promise<boolean> {
     //Raid Server ID 532196192051003443
     //Mod team role ID 861626304344490034
     //testing server ID 647916859718369303
     //testing server Role id 227837830704005140
     //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
     if (interaction.guildId === '532196192051003443') {
-        const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785');
+        const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785', '550640875407933440');
         if (hasRole === undefined) {
             return false;
         }
@@ -755,9 +755,54 @@ export interface ICommandInfo {
     options?: any
 }
 
-export function getInput(input: string): string{
+export function getInput(input: string): string {
     const content = input.split(' ');
-    content.splice(0,2);
+    content.splice(0, 2);
     return content.join(' ');
 
+}
+interface LeaderboardUser {
+    username: string,
+    numberOfGuides: number
+}
+export async function getLeaderboard(): Promise<Map<string, number>> {
+    const mongoClient = await connectToDB();
+    const collection = await connectToCollection('guides', mongoClient);
+    const guides = await collection.find<IGuide>({}).toArray();
+    console.log(`Number of guides: ${guides.length}`);
+    let leaderboardByID: Map<string, number> = new Map<string, number>();
+    for (const g of guides) {
+        if (Array.isArray(g.author)) {
+            for (const a of g.author) {
+                if (leaderboardByID.has(a)) {
+                    leaderboardByID.set(a, leaderboardByID.get(a) + 1)
+                }
+                else {
+                    leaderboardByID.set(a, 1);
+                }
+            }
+        }
+        else {
+            if (leaderboardByID.has(g.author)) {
+                leaderboardByID.set(g.author, leaderboardByID.get(g.author) + 1)
+            }
+            else leaderboardByID.set(g.author, 1);
+        }
+    }
+    let leaderboardByUserName: Map<string, number> = new Map<string, number>();
+    const sorted = (new Map([...leaderboardByID.entries()].sort((a, b) => b[1] - a[1])));
+    console.log(`Sorted:\n${sorted}`)
+    for (const s of sorted) {
+        let user: User = await client.users.fetch(s[0]);
+        leaderboardByUserName.set(`${user.username}#${user.discriminator}`, s[1])
+    }
+
+    /*
+    leaderboardByID.forEach(async (v,k) => {
+        const user: User = await client.users.fetch(k);
+        console.log(k);
+        leaderboardByUserName.set(`${user.username}#${user.discriminator}`,v)
+    })*/
+    console.log(leaderboardByUserName);
+    return leaderboardByUserName;
 }

@@ -3,7 +3,7 @@ import fs from 'fs';
 import express, { Response, Request } from 'express';
 import bodyParser from 'body-parser';
 import { clientId, testClientId, guildIDs, token, testToken } from './config.json';
-import { connectToCollection, connectToDB, Data, getAuthToken, getSpreadSheetValues, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
+import { connectToCollection, connectToDB, Data, getAuthToken, getLeaderboard, getSpreadSheetValues, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
 import { auth } from 'google-auth-library';
 import { uploadImage } from './general/util';
 import { userMention } from '@discordjs/builders';
@@ -14,7 +14,7 @@ import * as promClient from 'prom-client';
 
 const TOKEN = token;//change before pushing live!
 const CLIENTID = clientId;
-
+export let leaderboard: Map<string,number>;
 export const superUsers = ['227837830704005140', '269643701888745474', '205448080797990912']
 
 export const logger = tracer.dailyfile({
@@ -81,15 +81,17 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     });
     guideResponse.data = row.data.values[0];
     let dungeonGuide = false;
+    let tags = [...guideResponse.data[5].split(',').map(part => part.trim()).slice(1)]
     if (guideResponse.data[1] === 'TRUE') dungeonGuide = true;
     let guide: IGuide = {
         author: guideResponse.data[3].split(', '),
         rarity: guideResponse.data[7],
         stage: guideResponse.data[6],
-        tag: (dungeonGuide) ? [guideResponse.data[5], 'dungeon'] : [guideResponse.data[5], 'champion'],
+        tag: (dungeonGuide) ? (guideResponse.data[7]) ? [tags[0], 'dungeon', 'champion', ...tags.slice(1)]: [guideResponse.data[5], 'dungeon'] : [tags[0], 'champion'],
         title: guideResponse.data[4],
         data: []
     }
+    guide.tag = guide.tag.filter(x => x !== undefined);
 
     const guidesSlides: Data[] = []
     const topUpload = await uploadImage(guideResponse.data[9], client, auth);
@@ -184,6 +186,12 @@ client.once('ready', async () => {
     await deployCommands();
     const num = await client.guilds.fetch();
     bot_guilds_total.set(num.size);
+    leaderboard = await getLeaderboard();
+    console.log(`Leaderboard set!`);
+    setTimeout(async () => {
+        leaderboard  = await getLeaderboard();
+        console.log(leaderboard);
+    }, 900000 );
     /*
     const collection = await connectToCollection('guides');
     const guides = await collection.find<IGuide>({}).toArray();
@@ -193,6 +201,9 @@ client.once('ready', async () => {
     }*/
 
 });
+
+
+
 client.on('messageCreate', async (message: Message) => {
     if (!superUsers.includes(message.author.id)) return;
     if (!message.mentions.has(client.user.id)) return;
