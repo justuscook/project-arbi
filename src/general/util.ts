@@ -797,6 +797,7 @@ export async function getLeaderboard(): Promise<Map<string, number>> {
         leaderboardByUserName.set(`${user.username}#${user.discriminator}`, s[1])
     }
 
+
     /*
     leaderboardByID.forEach(async (v,k) => {
         const user: User = await client.users.fetch(k);
