@@ -14,7 +14,7 @@ import * as promClient from 'prom-client';
 
 const TOKEN = token;//change before pushing live!
 const CLIENTID = clientId;
-export let leaderboard: Map<string,number>;
+export let leaderboard: Map<string, number>;
 export const superUsers = ['227837830704005140', '269643701888745474', '205448080797990912']
 
 export const logger = tracer.dailyfile({
@@ -87,7 +87,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
         author: guideResponse.data[3].split(', '),
         rarity: guideResponse.data[7],
         stage: guideResponse.data[6],
-        tag: (dungeonGuide) ? (guideResponse.data[7]) ? [tags[0], 'dungeon', 'champion', ...tags.slice(1)]: [guideResponse.data[5], 'dungeon'] : [tags[0], 'champion'],
+        tag: (dungeonGuide) ? (guideResponse.data[7]) ? [tags[0], 'dungeon', 'champion', ...tags.slice(1)] : [guideResponse.data[5], 'dungeon'] : [tags[0], 'champion'],
         title: guideResponse.data[4],
         data: []
     }
@@ -187,11 +187,10 @@ client.once('ready', async () => {
     const num = await client.guilds.fetch();
     bot_guilds_total.set(num.size);
     leaderboard = await getLeaderboard();
-    console.log(`Leaderboard set!`);
-    setTimeout(async () => {
-        leaderboard  = await getLeaderboard();
+    setInterval(async () => {
+        leaderboard = await getLeaderboard();
         console.log(leaderboard);
-    }, 900000 );
+    }, 900000);
     /*
     const collection = await connectToCollection('guides');
     const guides = await collection.find<IGuide>({}).toArray();
@@ -205,49 +204,18 @@ client.once('ready', async () => {
 
 
 client.on('messageCreate', async (message: Message) => {
-    if (!superUsers.includes(message.author.id)) return;
     if (!message.mentions.has(client.user.id)) return;
     if (message.content.includes("@here") || message.content.includes("@everyone")) return;
     const commandName = message.content.split(' ')[1];
     const command = client.atCommands.get(commandName)
     if (!command) return;
-    else {
-        const commandSuccesss: Promise<boolean> = await command.execute(message);
-    }
-    /*
-    if (message.mentions.has(client.user.id)) {
-        if (message.content.split(' ')[1] !== 'help') {
+    if (command.restricted) {
+        if (!superUsers.includes(message.author.id)) {
             return;
         }
-        console.log(message.content)
-        const commands = await client.application.commands.fetch();
-        const embed: MessageEmbed = new MessageEmbed({
-            description: `${userMention((await message.author.fetch()).id)} Here is a list of my commands!`
-        });
-        const commandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith('.js'));
-        interface commandUsage {
-            usage: string,
-            name: string
-        }
-        const commandUsage: commandUsage[] = [];
+    }
+    const commandSuccesss: Promise<boolean> = await command.execute(message);
 
-        for (const file of commandFiles) {
-            const command = require(__dirname + `//${file}`);
-            commandUsage.push({
-                name: file.replace('.js', '').toLowerCase(),
-                usage: command.usage
-            })
-            //console.lo
-        }
-        for (const c of commands) {
-            embed.fields.push({
-                name: c[1].name,
-                value: `Description: ${c[1].description}`,
-                inline: false
-            });
-        }
-        await message.reply({ embeds: [embed] });
-    }*/
 })
 /**
  * Command/Interaction handler
@@ -355,7 +323,9 @@ async function deployCommands() {
         if (command.registerforTesting === true) {
             commands.push(command.data.toJSON());
         }
-        globalCommands.push(command.data.toJSON());
+        else {
+            globalCommands.push(command.data.toJSON());
+        }
     }
 
     const rest = new REST({ version: '9' }).setToken(TOKEN);

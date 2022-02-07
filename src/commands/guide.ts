@@ -4,6 +4,8 @@ import { IMessageEmbeds } from '../general/util'
 import * as util from '../general/util';
 import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches } from '../arbi';
 
+export const registerforTesting = false;
+
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('guide')
     .addStringOption(option => option
@@ -286,4 +288,3 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     }
 }
 
-export const registerforTesting = false;

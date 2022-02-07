@@ -17,6 +17,7 @@ const commandFile: ICommandInfo = {
             message.reply(`${userMention(message.author.id)} the guide ${bold(search)} was not found!`)
         }
         return true;
-    }
+    },
+    restricted: true
 }
 export default commandFile;

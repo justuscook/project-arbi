@@ -752,6 +752,7 @@ export async function getUserNames(users: Map<string, string>): Promise<Map<User
 export interface ICommandInfo {
     name: string,
     execute: any,
+    restricted?: boolean,
     options?: any
 }
 
@@ -769,6 +770,7 @@ export async function getLeaderboard(): Promise<Map<string, number>> {
     const mongoClient = await connectToDB();
     const collection = await connectToCollection('guides', mongoClient);
     const guides = await collection.find<IGuide>({}).toArray();
+    await mongoClient.close()
     console.log(`Number of guides: ${guides.length}`);
     let leaderboardByID: Map<string, number> = new Map<string, number>();
     for (const g of guides) {
@@ -806,4 +808,10 @@ export async function getLeaderboard(): Promise<Map<string, number>> {
     })*/
     console.log(leaderboardByUserName);
     return leaderboardByUserName;
+}
+
+export function getUserInput(data: string): string {
+    let inputArray = data.split('>')
+    let input = inputArray[1].split(' ').splice(2).join(' ');
+    return input;
 }

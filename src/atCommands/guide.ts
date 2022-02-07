@@ -5,17 +5,17 @@ import { connectToCollection, connectToDB, fuzzySearch, getInput, getLeaderboard
 import * as util from "../general/util";
 
 const commandFile: ICommandInfo = {
-    name: 'test',
+    name: 'guide',
     execute: async (message: Message): Promise<boolean> => {
         let row1: MessageActionRow = new MessageActionRow;
         let row2: MessageActionRow = new MessageActionRow;
         let showInServer = false;
         const embeds: IMessageEmbeds[] = [];
-        let userToDM: User = message.author;
+        let userToDM: User;
         const originalUser: User = message.author;
         let canDM = await util.canDM(message);
         let canShow = await util.canShow(message);
-        let input = message.content;
+        let input = util.getUserInput(message.content);
         let ogInput = message.content;
         if (input === null) input = 'list';
         if (input.toLowerCase().includes('show')) {
@@ -30,7 +30,7 @@ const commandFile: ICommandInfo = {
             userToDM = await message.client.users.fetch(userID);
             input = data[1];
         }
-        //console.log(input);
+        console.log(input);
         try {
             const inbox = new MessageActionRow()
                 .addComponents(
@@ -69,7 +69,7 @@ const commandFile: ICommandInfo = {
                 else {
                     const dmEmbed = new MessageEmbed()
                         .setDescription(`${message.author.toString()}${(showInServer) ? `You can\'t show commands in this server.` : ''} Guide(s) sent, check your "Inbox"!`)
-                        .setAuthor({ name: `${ogInput}` })
+                        //.setAuthor({ name: `${ogInput}` })
 
                     const dmAlert = await message.reply({ embeds: [dmEmbed], components: [inbox] });
                     const listMessage = await message.author.send({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
@@ -171,7 +171,8 @@ const commandFile: ICommandInfo = {
                             .setStyle('SUCCESS')
                     )
                 };
-                if (userToDM !== null && canDM) {
+                if (userToDM && canDM) {
+                    console.log('get to here before crash')
                     const topCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].topEmbed] });
                     const midCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].midEmbed] });
                     const botCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
@@ -191,10 +192,11 @@ const commandFile: ICommandInfo = {
                     return true;
                 }
                 else {
-                    if (userToDM !== null) {
+                    if (userToDM) {
                         await message.reply(`${message.author.toString()}, you can't send DM's, only mod in the offical Raid: SL server can.`)
                         return true;
                     }
+                    console.log('got here before crash 2')
                     const topCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].topEmbed] });
                     const midCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].midEmbed] });
                     const botCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
@@ -211,7 +213,8 @@ const commandFile: ICommandInfo = {
                 }
             }
             else {
-                if (userToDM !== null && canDM) {
+                if (userToDM && canDM) {
+                    console.log('got here before crash 3')
                     const topCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].topEmbed] });
                     const midCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].midEmbed] });
                     const botCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
@@ -232,16 +235,17 @@ const commandFile: ICommandInfo = {
                     return true;
                 }
                 else {
-                    if (userToDM !== null) {
+                    if (userToDM) {
                         await message.reply(`${message.author.toString()}, you can't send DM's, only mod in the offical Raid: SL server can.`)
                         return true;
                     }
+                    console.log('got here before crash 4')
                     const topCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].topEmbed] });
                     const midCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].midEmbed] });
                     const botCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
                     const dmEmbed = new MessageEmbed()
                         .setDescription(`${message.author.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''}  Guide(s) sent, check your "Inbox"!`)
-                        .setAuthor({ name: `${ogInput}` })
+                        //.setAuthor({ name: `${ogInput}` })
 
                     const dmAlert = await message.reply({ embeds: [dmEmbed], components: [inbox] });
 
