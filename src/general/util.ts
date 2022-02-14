@@ -778,10 +778,18 @@ export async function getLeaderboard(): Promise<Map<string, number>> {
                 if (leaderboardByID.has(a)) {
                     leaderboardByID.set(a, leaderboardByID.get(a) + 1)
                 }
+                else{
+                    leaderboardByID.set(a, 1)
+                }
             }
         }
         else {
-            leaderboardByID.set(g.author, 1)
+            if (leaderboardByID.has(g.author)) {
+                leaderboardByID.set(g.author, leaderboardByID.get(g.author) + 1)
+            }
+            else{
+                leaderboardByID.set(g.author, 1)
+            }
         }
     }
     let leaderboardByUserName: Map<string, number> = new Map<string, number>();
