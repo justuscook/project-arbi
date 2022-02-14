@@ -7,6 +7,8 @@ const commandFile: ICommandInfo = {
     execute: async (message: Message): Promise<boolean> => {
         await message.reply('Rebooting, this shouldn\'t take long 😴...🌄');
         process.exit();        
-    }
+    },
+    restricted: true
+    
 }
 export default commandFile;

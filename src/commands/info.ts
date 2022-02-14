@@ -3,7 +3,7 @@ import discord, { ApplicationCommandPermissionData, CommandInteraction, Message,
 import { getColorByRarity, connectToCollection, fuzzySearch, getFactionImage, IChampionInfo, IGuide, canDM, canShow, inboxLinkButton, delayDeleteMessages, getSkillsEmbeds, skillsButtonPagination, removeShow, connectToDB } from '../general/util';
 import { AddCommandToTotalFailedCommands, logger } from '../arbi';
 
-
+export const registerforTesting = false
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('info')
 
@@ -184,7 +184,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     }
 }
 
-export const registerforTesting = false;
+;
 
 
 

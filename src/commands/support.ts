@@ -3,7 +3,7 @@ import exp from 'constants';
 import discord, { CommandInteraction, MessageEmbed } from 'discord.js';
 import { logger } from '../arbi';
 
-
+export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('support')
     .setDefaultPermission(true)
@@ -24,7 +24,7 @@ export async function execute(interaction: CommandInteraction) : Promise<boolean
     }
 }
 
-export const registerforTesting = false;
+
 
 
 

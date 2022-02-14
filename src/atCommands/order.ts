@@ -13,6 +13,7 @@ const commandFile: ICommandInfo = {
             const mongoClient = await connectToDB();
             const collection = await connectToCollection('guides', mongoClient);
             const guides = await collection.find<IGuide>({}).toArray();
+            await mongoClient.close()
             /*if (isNaN(order)) {
                 message.reply(`${userMention(message.author.id)} I couldnt tell what number to use for the order!`)
                 return true;
@@ -86,6 +87,7 @@ const commandFile: ICommandInfo = {
         }
 
         return true;
-    }
+    },
+    restricted: true
 }
 export default commandFile;

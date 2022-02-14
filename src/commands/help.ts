@@ -6,6 +6,7 @@ import fs from 'fs';
 import * as util from '../general/util'
 import { logger } from '../arbi';
 
+export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('help')
     .addStringOption(option => option.setName('command_name').setDescription('Command to get more info on.').setRequired(false))
@@ -30,7 +31,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         //const commands = await interaction.client.application.commands.fetch();
         const commands = await interaction.client.application.commands.fetch();
         const embed: MessageEmbed = new MessageEmbed({
-            description: `${userMention((await interaction.user.fetch()).id)} Here is a list of my commands!`
+            description: `${userMention((await interaction.user.fetch()).id)} Here is a list of my commands!`,
         });
         const commandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith('.js'));
         interface commandUsage {
@@ -87,5 +88,5 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
 
 export const usage = `/help - for basic help\n/help ${bold('tab')} command_name - for info about a command`;
 
-export const registerforTesting = false;
+
 

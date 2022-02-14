@@ -4,6 +4,8 @@ import { IMessageEmbeds } from '../general/util'
 import * as util from '../general/util';
 import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches } from '../arbi';
 
+export const registerforTesting = false;
+
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('guide')
     .addStringOption(option => option
@@ -50,7 +52,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     }//const regexCheck = /<@(!|)userID>/gim;
     //if (regexCheck.exec(x) !== null) {}
     if (input.includes('<@')) {
-        input = input.replace(/!/g ,'');
+        input = input.replace(/!/g, '');
         const data = input.match(new RegExp("(.+) <@([^>]+)"));
         const userID = data[2];
         userToDM = await interaction.client.users.fetch(userID);
@@ -267,25 +269,22 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
                 const dmEmbed = new MessageEmbed()
                     .setDescription(`${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''}  Guide(s) sent, check your "Inbox"!`)
-                    .setAuthor({ name: `/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}`})
+                    .setAuthor({ name: `/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}` })
 
-            const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
-
-
-            await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-            await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
-            return true;
+                const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
 
 
+                await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
+                return true;
+
+
+            }
         }
     }
-    }
     catch (err) {
-    interaction.followUp('There was an error in your guide search, it It logged and we are looking into it!  Please use /support and ask for help with your issue if it keeps happening.');
-    console.log(err)
-    return false;
+        interaction.followUp('There was an error in your guide search, it is logged and we are looking into it!  Please use /support and ask for help with your issue if it keeps happening.');
 
-}
+    }
 }
 
-export const registerforTesting = false;

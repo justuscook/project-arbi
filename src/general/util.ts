@@ -317,24 +317,23 @@ export function tolower(test: string): string {
     return test.toLowerCase();
 }
 
-export async function canDM(interaction: CommandInteraction): Promise<boolean> {
+export async function canDM(interaction: CommandInteraction | Message): Promise<boolean> {
     //Raid Server ID 532196192051003443
     //Mod team role ID 861626304344490034
     //testing server ID 647916859718369303
     //testing server Role id 227837830704005140
     //const RaidModRole = await (await (await interaction.client.guilds.fetch('532196192051003443')).roles.fetch('861626304344490034'));
     if (interaction.guildId === '532196192051003443') {
-        if (interaction.guildId === '532196192051003443') {
-            const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785', '550640875407933440');
-            if (hasRole === false) {
-                return false;
-            }
+        const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785', '550640875407933440');
+        if (hasRole === false) {
+            return false;
         }
-        return true;
     }
+    return true;
 }
 
-export async function canShow(interaction: CommandInteraction): Promise<boolean> {
+
+export async function canShow(interaction: CommandInteraction | Message): Promise<boolean> {
     //Raid Server ID 532196192051003443
     //Mod team role ID 861626304344490034
     //testing server ID 647916859718369303
@@ -753,6 +752,7 @@ export async function getUserNames(users: Map<string, string>): Promise<Map<User
 export interface ICommandInfo {
     name: string,
     execute: any,
+    restricted?: boolean,
     options?: any
 }
 
@@ -770,6 +770,7 @@ export async function getLeaderboard(): Promise<Map<string, number>> {
     const mongoClient = await connectToDB();
     const collection = await connectToCollection('guides', mongoClient);
     const guides = await collection.find<IGuide>({}).toArray();
+    await mongoClient.close()
     console.log(`Number of guides: ${guides.length}`);
     let leaderboardByID: Map<string, number> = new Map<string, number>();
     for (const g of guides) {
@@ -778,8 +779,9 @@ export async function getLeaderboard(): Promise<Map<string, number>> {
                 if (leaderboardByID.has(a)) {
                     leaderboardByID.set(a, leaderboardByID.get(a) + 1)
                 }
-                else{
-                    leaderboardByID.set(a, 1)
+
+                else {
+                    leaderboardByID.set(a, 1);
                 }
             }
         }
@@ -787,19 +789,19 @@ export async function getLeaderboard(): Promise<Map<string, number>> {
             if (leaderboardByID.has(g.author)) {
                 leaderboardByID.set(g.author, leaderboardByID.get(g.author) + 1)
             }
-            else{
-                leaderboardByID.set(g.author, 1)
-            }
+
+            else leaderboardByID.set(g.author, 1);
         }
     }
     let leaderboardByUserName: Map<string, number> = new Map<string, number>();
-    const sorted = (new Map([...leaderboardByID.entries()].sort((a,b) => b[1]-a[1])));
+    const sorted = (new Map([...leaderboardByID.entries()].sort((a, b) => b[1] - a[1])));
     console.log(`Sorted:\n${sorted}`)
-    for(const s of sorted){
+    for (const s of sorted) {
         let user: User = await client.users.fetch(s[0]);
-        leaderboardByUserName.set(`${user.username}#${user.discriminator}`,s[1])
+        leaderboardByUserName.set(`${user.username}#${user.discriminator}`, s[1])
     }
-    
+
+
     /*
     leaderboardByID.forEach(async (v,k) => {
         const user: User = await client.users.fetch(k);
@@ -808,4 +810,10 @@ export async function getLeaderboard(): Promise<Map<string, number>> {
     })*/
     console.log(leaderboardByUserName);
     return leaderboardByUserName;
+}
+
+export function getUserInput(data: string): string {
+    let inputArray = data.split('>')
+    let input = inputArray[1].split(' ').splice(2).join(' ');
+    return input;
 }
