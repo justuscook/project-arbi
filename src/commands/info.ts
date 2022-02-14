@@ -59,7 +59,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     url: getFactionImage(champ.faction)
                 },
                 image: {
-                    url: `https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/newAvatars/${parseInt(champ.id) - 6}.png`
+                    url: `https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/newAvatars/${champ.id - 6}.png`
                 },
                 fields: [{
                     name: 'Faction:',

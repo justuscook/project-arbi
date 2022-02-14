@@ -559,7 +559,7 @@ export function validateGuide(guide: IGuide): string {
 export interface IChampionInfo {
     name: string,
     key?: string,
-    id: string,
+    id: number,
     hp: string,
     def: string,
     atk: string,
