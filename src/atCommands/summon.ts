@@ -13,39 +13,40 @@ const commandFile: ICommandInfo = {
             await message.reply(`You didn't give a valid shard type to pull, type ${bold('ancient, sacred or void')} next time!`)
             return true;
         }
-        const shardsToPull = parseInt(input[3]);
+        let shardsToPull = parseInt(input[3]);
         if (shardsToPull === NaN) {
             await message.reply(`You didn't give a number of shards to pull, next time type the shard type then a number 1-1000`)
             return true;
             //error
         }
+        if(shardsToPull > 100) shardsToPull = 100;
         const mongoClient = await connectToDB();
         let collection = await connectToCollection('shard_data', mongoClient);
         const champPool = await collection.findOne<IChampionPool>({});
         collection = await connectToCollection('champion_info', mongoClient);
         const champs = await collection.find<IChampionInfo>({}).toArray();
         mongoClient.close();
-        let champsPulled: string[] = [];
+        let champsPulled: IChampPull[] = [];
         const legoRate = getRate('legendary', shardType);
         const rareRate = getRate('rare', shardType);
         //const epicRate = getRate('rare', shardType);
         for (let i = 0; i < shardsToPull; i++) {
             const random = getRandomIntInclusive(0, 100)
             if (random > 100 - legoRate) {
-                champsPulled.push(await getRandomChampion(champPool,shardType, 'legendary'));
+                champsPulled.push({champ: await getRandomChampion(champPool,shardType, 'legendary'),rarity: 'legendary'});
             }
-            else if (random < 100 - rareRate) {
-                champsPulled.push(await getRandomChampion(champPool, shardType, 'rare'));
+            else if (shardType !== 'sacred' && random < 100 - rareRate) {
+                champsPulled.push({champ: await getRandomChampion(champPool, shardType, 'rare'),rarity: 'rare'});
             }
             else {
-                champsPulled.push(await getRandomChampion(champPool, shardType, 'epic'));
+                champsPulled.push({champ: await getRandomChampion(champPool, shardType, 'epic'), rarity: 'epic'});
             }
         }
         
 
         let champsPulledText = '';
         for (const c of champsPulled) {
-            const id = parseInt(c) + 6;
+            const id = parseInt(c.champ) + 6;
             const champ = champs.find(x => x.id === id);
             champsPulledText += `${champ.name}\n`;
         }
@@ -133,6 +134,7 @@ async function getRandomChampion(champPool:IChampionPool,shardType: string, rari
                 }
                 case 'legendary': {
                     return champPool.sacred.legendary[Math.floor(Math.random() * champPool.sacred.legendary.length)];
+                    
                 }
             }
 
@@ -170,4 +172,9 @@ interface IChampionPool {
         epic: []
         legendary: []
     }
+}
+
+interface IChampPull{
+    champ: string,
+    rarity: string
 }

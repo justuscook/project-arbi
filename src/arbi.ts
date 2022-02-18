@@ -11,6 +11,7 @@ import https from 'https';
 import http from 'http';
 import tracer from 'tracer';
 import * as promClient from 'prom-client';
+import cors from 'cors';
 
 const TOKEN = token;//change before pushing live!
 const CLIENTID = clientId;
@@ -39,35 +40,25 @@ export const client: any = new Client({
     ]
 });
 const app = express();
-
-app.use(express.json());
-
-try {
-    const httpServer = http.createServer(app);
-    const httpsServer = https.createServer({
-        key: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/privkey.pem'),
-        cert: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/fullchain.pem')
-    }, app);
-
-    httpServer.listen(80, () => {
-        console.log('HTTP Server listening on port 80');
-    })
-
-    httpsServer.listen(443, () => {
-        console.log('HTTPS Server listening on port 443');
-    })
-}
-catch {
-    console.log('Testing environment.')
-}
-
+app.use(cors());
+app.use(express.json());/*
 app.listen(9001, () => {
     console.log('Bot Listening on port 9001 ⚡');
 })
+*/
 
+/*
 app.get('/', (req: Request, res: Response) => {
     res.send('Bot online 🤖⚡')
 })
+*/
+app.get('/', (req: Request, res: Response) => {
+    res.status(200).send('test')
+});
+
+app.get('/online', (req: Request, res: Response) => {
+    res.status(200).json({ status: 'online' })
+});
 app.post('/guideUpdate', async (req: Request, res: Response) => {
     const auth = await getAuthToken();
     //console.log('New guide approved!')
@@ -164,6 +155,25 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
 
     //console.log(approvedGuides);
 })
+
+try {
+    const httpServer = http.createServer(app);
+    const httpsServer = https.createServer({
+        key: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/privkey.pem'),
+        cert: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/fullchain.pem')
+    }, app);
+
+    httpServer.listen(81, () => {
+        console.log('HTTP Server listening on port 81');
+    })
+
+    httpsServer.listen(9001, () => {
+        console.log('HTTPS Server listening on port 9001');
+    })
+}
+catch {
+    console.log('Testing environment.')
+}
 
 client.atCommands = new Collection();
 const atCommandFiles = fs.readdirSync(__dirname + '/atCommands').filter(file => file.endsWith('.js'));
