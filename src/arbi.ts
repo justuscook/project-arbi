@@ -72,7 +72,8 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     });
     guideResponse.data = row.data.values[0];
     let dungeonGuide = false;
-    let tags = [...guideResponse.data[5].split(',').map(part => part.trim()).slice(1)]
+    let tags =[];
+    (guideResponse.data[5].includes(',')) ? tags.push([...guideResponse.data[5].split(',')]) : tags.push(guideResponse.data[5].trim());
     if (guideResponse.data[1] === 'TRUE') dungeonGuide = true;
     let guide: IGuide = {
         author: guideResponse.data[3].split(', '),
@@ -155,17 +156,15 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
 
     //console.log(approvedGuides);
 })
-
-try {
-    const httpServer = http.createServer(app);
+const httpServer = http.createServer(app);
+httpServer.listen(81, () => {
+    console.log('HTTP Server listening on port 81');
+})
+try {    
     const httpsServer = https.createServer({
         key: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/privkey.pem'),
         cert: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/fullchain.pem')
     }, app);
-
-    httpServer.listen(81, () => {
-        console.log('HTTP Server listening on port 81');
-    })
 
     httpsServer.listen(9001, () => {
         console.log('HTTPS Server listening on port 9001');
@@ -317,7 +316,7 @@ export function AddToSuccessfulGuideSearches(name: string) {
 export function AddToFailedGuideSearches(name: string) {
     bot_guides_failed_total.labels(name).inc();
 }
-
+//job
 register.setDefaultLabels({
     app: 'project-arbi-bot'
 });

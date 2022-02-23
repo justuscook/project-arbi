@@ -69,7 +69,7 @@ const commandFile: ICommandInfo = {
                 else {
                     const dmEmbed = new MessageEmbed()
                         .setDescription(`${message.author.toString()}${(showInServer) ? `You can\'t show commands in this server.` : ''} Guide(s) sent, check your "Inbox"!`)
-                        //.setAuthor({ name: `${ogInput}` })
+                    //.setAuthor({ name: `${ogInput}` })
 
                     const dmAlert = await message.reply({ embeds: [dmEmbed], components: [inbox] });
                     const listMessage = await message.author.send({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
@@ -207,7 +207,7 @@ const commandFile: ICommandInfo = {
                     const dmAlert = await message.reply({ embeds: [dmEmbed], components: [inbox] });
 
                     await util.guideButtonPagination(message.author.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-                    await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
+                    if (message.channel.type !== 'DM') await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
                     return true;
 
                 }
@@ -245,13 +245,13 @@ const commandFile: ICommandInfo = {
                     const botCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
                     const dmEmbed = new MessageEmbed()
                         .setDescription(`${message.author.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''}  Guide(s) sent, check your "Inbox"!`)
-                        //.setAuthor({ name: `${ogInput}` })
-
-                    const dmAlert = await message.reply({ embeds: [dmEmbed], components: [inbox] });
-
-
+                    //.setAuthor({ name: `${ogInput}` })
+                    if (message.channel.type !== 'DM') {
+                        const dmAlert = await message.reply({ embeds: [dmEmbed], components: [inbox] });
+                        await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
+                    }
                     await util.guideButtonPagination(message.author.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-                    await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
+
                     return true;
                 }
             }

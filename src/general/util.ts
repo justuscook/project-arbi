@@ -444,7 +444,10 @@ export function getGuideList(guide_data: IGuide[]): string[] {
         if (champs.includes(g.tag[0].trim())) {
             continue;
         }
-        if (g.tag.includes('champion')) champs.push(g.tag[0].trim());
+        if (g.tag.includes('champion')) {
+            if (g.tag[0].trim() === 'champion' || g.tag[0].trim() === 'dungeon') continue
+            else champs.push(g.tag[0].trim());
+        }
         else guides += `${g.title}\n`
     }
     let champions = `There are ${totalChampGuides.toString()} guides in our database for ${champs.length} champions:\n\n`;
@@ -459,6 +462,7 @@ export function getGuideList(guide_data: IGuide[]): string[] {
     }
     champions = champions.trim().substring(0, champions.length - 2);
     guides = guides.trim();
+
     return [champions, champions2, guides];
 }
 /**
@@ -816,4 +820,11 @@ export function getUserInput(data: string): string {
     let inputArray = data.split('>')
     let input = inputArray[1].split(' ').splice(2).join(' ');
     return input;
+}
+
+export function removeItemFromArray(array: Array<string>, item: string) {
+    const index = array.indexOf(item);
+    if (index > -1) {
+        array.splice(index, 1);
+    }
 }
