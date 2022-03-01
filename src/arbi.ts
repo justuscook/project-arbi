@@ -1,7 +1,6 @@
 import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, Intents, ApplicationCommandResolvable, Util, TextChannel, User, Message, Interaction, MessageEmbed } from 'discord.js';
 import fs from 'fs';
 import express, { Response, Request } from 'express';
-import bodyParser from 'body-parser';
 import { clientId, testClientId, guildIDs, token, testToken } from './config.json';
 import { connectToCollection, connectToDB, Data, getAuthToken, getLeaderboard, getSpreadSheetValues, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
 import { auth } from 'google-auth-library';
@@ -42,11 +41,12 @@ export const client: any = new Client({
 });
 const app = express();
 app.use(cors());
-app.use(express.json());/*
+app.use(express.json());
+/*
 app.listen(9001, () => {
     console.log('Bot Listening on port 9001 ⚡');
-})
-*/
+})*/
+
 
 /*
 app.get('/', (req: Request, res: Response) => {
@@ -61,14 +61,14 @@ app.get('/online', (req: Request, res: Response) => {
 });
 
 app.post('/prom', async (req: Request, res: Response) => {
-    const response = await axios({ 
+    const response = await axios({
         url: req.body.url,
         method: 'GET',
         responseType: 'json',
-        params:{
+        params: {
             query: req.body.query
         }
-     })
+    })
     res.send(response.data);
 })
 app.post('/guideUpdate', async (req: Request, res: Response) => {
