@@ -1,5 +1,5 @@
 import { bold, userMention } from "@discordjs/builders";
-import { Message } from "discord.js";
+import { Message, ReplyMessageOptions } from "discord.js";
 import { connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
 
 const commandFile: ICommandInfo = {
@@ -11,10 +11,20 @@ const commandFile: ICommandInfo = {
         const deletedGuide = await collection.findOneAndDelete({ title: search });
         await mongoClient.close();
         if (deletedGuide.value) {
-            message.reply(`${userMention(message.author.id)} the guide ${bold(search)} was successfully deleted!`)
+            message.reply({
+                allowedMentions: {
+                    repliedUser: false
+                },
+                content: `${userMention(message.author.id)} the guide ${bold(search)} was successfully deleted!`
+            })
         }
         else {
-            message.reply(`${userMention(message.author.id)} the guide ${bold(search)} was not found!`)
+            message.reply({
+                allowedMentions: {
+                    repliedUser: false
+                },
+                content: `${userMention(message.author.id)} the guide ${bold(search)} was not found!`
+            })
         }
         return true;
     },

@@ -35,17 +35,29 @@ const commandFile: ICommandInfo = {
                 description: titlesString + 'Type **correct** if the order is correct already.',
                 title: `Current order for ${found[0].tag[0]}`,
             })
-            await message.reply({ embeds: [embed] });
+            await message.reply({
+                allowedMentions: {
+                    repliedUser: false
+                }, embeds: [embed]
+            });
             const filter = m => m.author.id === message.author.id;
             let newOrder: Map<string, string> = new Map();
             const collector = message.channel.createMessageCollector({ filter, max: 1, time: 15000 });
             collector.on('collect', async (m: Message) => {
                 if (m.content.toLowerCase() === 'correct') {
-                    message.reply('OK, thanks for verifing.  If it is still wrong in the guides command you can ping Orcinus!');
+                    message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, content: 'OK, thanks for verifing.  If it is still wrong in the guides command you can ping Orcinus!'
+                    });
                     return;
                 }
                 if ((!m.content.includes('a') && !m.content.includes('b')) || m.content.length != found.length) {
-                    message.reply('Your input doesn\'t seem to be right, please try the command again.');
+                    message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, content: 'Your input doesn\'t seem to be right, please try the command again.'
+                    });
                     return;
                 }
                 const input: string[] = m.content.toUpperCase().split('');
@@ -60,6 +72,9 @@ const commandFile: ICommandInfo = {
                 const champName = found[0].tag[0];
 
                 const newTitleMessage = await message.reply({
+                    allowedMentions: {
+                        repliedUser: false
+                    },
                     embeds: [{
                         title: `**New** order for ${champName}:`,
                         description: `${newOrderString}`
@@ -78,12 +93,20 @@ const commandFile: ICommandInfo = {
                 }
 
                 await mongoClient.close();
-                await message.reply(`${userMention(message.author.id)} the guides for ${bold(search)} were re-ordered successfully!`)
+                await message.reply({
+                    allowedMentions: {
+                        repliedUser: false
+                    }, content: `${userMention(message.author.id)} the guides for ${bold(search)} were re-ordered successfully!`
+                })
             });
 
         }
         catch (err) {
-            await message.reply(`${userMention(message.author.id)} the guides for ${bold(search)} were not re-ordered, something went wrong!`)
+            await message.reply({
+                allowedMentions: {
+                    repliedUser: false
+                }, content: `${userMention(message.author.id)} the guides for ${bold(search)} were not re-ordered, something went wrong!`
+            })
         }
 
         return true;

@@ -1,8 +1,9 @@
 import { bold, codeBlock, Embed, userMention } from "@discordjs/builders";
-import { Message, MessageActionRow, MessageButton, MessageEmbed, MessageEmbedImage, MessageReaction, User } from "discord.js";
+import { Message, MessageActionRow, MessageButton, MessageEmbed, MessageEmbedImage, MessageReaction, ReplyMessageOptions, User } from "discord.js";
 import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches, leaderboard } from "../arbi";
 import { connectToCollection, connectToDB, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide, IMessageEmbeds } from "../general/util";
 import * as util from "../general/util";
+import { content } from "googleapis/build/src/apis/content";
 
 const commandFile: ICommandInfo = {
     name: 'guide',
@@ -62,7 +63,11 @@ const commandFile: ICommandInfo = {
                     .setDescription(codeBlock(listStings[1]))
                     .setColor('GOLD');
                 if (canShow && showInServer) {
-                    const listMessage = await message.reply({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
+                    const listMessage = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [genGuidesEmbed, champEmbed1, champEmbed2]
+                    });
                     await util.delayDeleteMessages([listMessage as Message]);
                     return true;
                 }
@@ -71,7 +76,12 @@ const commandFile: ICommandInfo = {
                         .setDescription(`${message.author.toString()}${(showInServer) ? `You can\'t show commands in this server.` : ''} Guide(s) sent, check your "Inbox"!`)
                     //.setAuthor({ name: `${ogInput}` })
 
-                    const dmAlert = await message.reply({ embeds: [dmEmbed], components: [inbox] });
+                    const dmAlert = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        },
+                        embeds: [dmEmbed], components: [inbox]
+                    });
                     const listMessage = await message.author.send({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
                     await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
 
@@ -86,7 +96,13 @@ const commandFile: ICommandInfo = {
                 found = util.fuzzySearch(guides, input, ['tag', 'title']);
             }
             if (found.length === 0) {
-                await message.reply(`There are no guides for ${bold(input)} yet!`);
+                await message.reply({
+                    allowedMentions: {
+                        repliedUser: false
+                    },
+                    content: `There are no guides for ${bold(input)} yet!`
+                })
+
                 AddToFailedGuideSearches(input);
                 return true;
             }
@@ -178,22 +194,42 @@ const commandFile: ICommandInfo = {
                     const botCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
                     //message.author.id = userToDM.id;
                     //interaction.channel.id = await (await userToDM.createDM()).id;
-                    const guideSend = await message.reply({ content: `I am sending the guide(s) to ${userToDM.toString()}\'s DM\'s!` });
+                    const guideSend = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, content: `I am sending the guide(s) to ${userToDM.toString()}\'s DM\'s!`
+                    });
 
                     await util.guideButtonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
                     await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
                     return true;
                 }
                 else if (canShow && showInServer === true) {
-                    const topCommandMessage = await message.reply({ embeds: [guideEmbeds[0].topEmbed] });
-                    const midCommandMessage = await message.reply({ embeds: [guideEmbeds[0].midEmbed] });
-                    const botCommandMessage = await message.reply({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
+                    const topCommandMessage = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [guideEmbeds[0].topEmbed]
+                    });
+                    const midCommandMessage = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [guideEmbeds[0].midEmbed]
+                    });
+                    const botCommandMessage = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [guideEmbeds[0].botEmbed], components: [row1, row2]
+                    });
                     await util.guideButtonPagination(message.author.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
                     return true;
                 }
                 else {
                     if (userToDM) {
-                        await message.reply(`${message.author.toString()}, you can't send DM's, only mod in the offical Raid: SL server can.`)
+                        await message.reply({
+                            allowedMentions: {
+                                repliedUser: false
+                            }, content: `${message.author.toString()}, you can't send DM's, only mod in the offical Raid: SL server can.`
+                        })
                         return true;
                     }
                     console.log('got here before crash 2')
@@ -204,7 +240,11 @@ const commandFile: ICommandInfo = {
                         .setDescription(`${message.author.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`)
 
 
-                    const dmAlert = await message.reply({ embeds: [dmEmbed], components: [inbox] });
+                    const dmAlert = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [dmEmbed], components: [inbox]
+                    });
 
                     await util.guideButtonPagination(message.author.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
                     if (message.channel.type !== 'DM') await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
@@ -220,23 +260,43 @@ const commandFile: ICommandInfo = {
                     const botCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
                     //message.author.id = userToDM.id;
                     //interaction.channel.id = await (await userToDM.createDM()).id;
-                    const guideSend = await message.reply({ content: `I am sending the guide(s) to ${userToDM.toString()}\'s DM\'s!` })
+                    const guideSend = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, content: `I am sending the guide(s) to ${userToDM.toString()}\'s DM\'s!`
+                    })
 
                     await util.guideButtonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
                     await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
                     return true;
                 }
                 else if (canShow && showInServer === true) {
-                    const topCommandMessage = await message.reply({ embeds: [guideEmbeds[0].topEmbed] });
-                    const midCommandMessage = await message.reply({ embeds: [guideEmbeds[0].midEmbed] });
-                    const botCommandMessage = await message.reply({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
+                    const topCommandMessage = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [guideEmbeds[0].topEmbed]
+                    });
+                    const midCommandMessage = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [guideEmbeds[0].midEmbed]
+                    });
+                    const botCommandMessage = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [guideEmbeds[0].botEmbed], components: [row1]
+                    });
                     await util.guideButtonPagination(message.author.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
 
                     return true;
                 }
                 else {
                     if (userToDM) {
-                        await message.reply(`${message.author.toString()}, you can't send DM's, only mod in the offical Raid: SL server can.`)
+                        await message.reply({
+                            allowedMentions: {
+                                repliedUser: false
+                            }, content: `${message.author.toString()}, you can't send DM's, only mod in the offical Raid: SL server can.`
+                        })
                         return true;
                     }
                     console.log('got here before crash 4')
@@ -247,7 +307,11 @@ const commandFile: ICommandInfo = {
                         .setDescription(`${message.author.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''}  Guide(s) sent, check your "Inbox"!`)
                     //.setAuthor({ name: `${ogInput}` })
                     if (message.channel.type !== 'DM') {
-                        const dmAlert = await message.reply({ embeds: [dmEmbed], components: [inbox] });
+                        const dmAlert = await message.reply({
+                            allowedMentions: {
+                                repliedUser: false
+                            }, embeds: [dmEmbed], components: [inbox]
+                        });
                         await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
                     }
                     await util.guideButtonPagination(message.author.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
@@ -257,7 +321,11 @@ const commandFile: ICommandInfo = {
             }
         }
         catch (err) {
-            await message.reply('There was an error in your guide search, it is logged and we are looking into it!  Please use /support and ask for help with your issue if it keeps happening.');
+            await message.reply({
+                allowedMentions: {
+                    repliedUser: false
+                }, content: 'There was an error in your guide search, it is logged and we are looking into it!  Please use /support and ask for help with your issue if it keeps happening.'
+            });
             console.log(err)
         }
     }

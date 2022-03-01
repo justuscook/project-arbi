@@ -72,7 +72,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     });
     guideResponse.data = row.data.values[0];
     let dungeonGuide = false;
-    let tags =[];
+    let tags = [];
     (guideResponse.data[5].includes(',')) ? tags.push([...guideResponse.data[5].split(',')]) : tags.push(guideResponse.data[5].trim());
     if (guideResponse.data[1] === 'TRUE') dungeonGuide = true;
     let guide: IGuide = {
@@ -160,7 +160,7 @@ const httpServer = http.createServer(app);
 httpServer.listen(81, () => {
     console.log('HTTP Server listening on port 81');
 })
-try {    
+try {
     const httpsServer = https.createServer({
         key: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/privkey.pem'),
         cert: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/fullchain.pem')
@@ -223,7 +223,13 @@ client.on('messageCreate', async (message: Message) => {
             return;
         }
     }
-    const commandSuccesss: Promise<boolean> = await command.execute(message);
+    const commandSuccess: Promise<boolean> = await command.execute(message);
+    if (commandSuccess) {
+        AddCommandToTotalSuccessfulCommands(command.data.name);
+    }
+    else {
+        AddCommandToTotalFailedCommands(command.data.name);
+    }
 
 })
 /**

@@ -21,7 +21,7 @@ const commandFile: ICommandInfo = {
             const champs = await collection.find<IChampionInfo>({}).toArray();
             await mongoClient.close()
             const found: IChampionInfo[] = fuzzySearch(champs, champName, ['name']);
-    
+
             if (found.length > 0) {
                 const champ: IChampionInfo = found[0];
                 let otherMatches: string = '';
@@ -108,13 +108,13 @@ const commandFile: ICommandInfo = {
                         value: champ.acc,
                         inline: true
                     }],
-    
+
                 });
                 if (champ.aura) {
                     embed.addField('Aura:', champ.aura, false);
                 }
                 embed.addField('Books to max skills:', champ.totalBooks, false);
-    
+
                 if (otherMatches !== '') {
                     embed.footer = {
                         text: `Not the right champion? Try one of these searches: ${otherMatches}`
@@ -132,11 +132,19 @@ const commandFile: ICommandInfo = {
                     i++;
                 }
                 if (allowShow && showInServer === true) {
-                    const statsMessage = await message.reply({ embeds: [embed] });
-                    const skillsMessage = await message.reply({ embeds: [skillsEmbeds[0]], components: [row1] });
+                    const statsMessage = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [embed]
+                    });
+                    const skillsMessage = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [skillsEmbeds[0]], components: [row1]
+                    });
                     await skillsButtonPagination(message.author.id, skillsMessage as Message, skillsEmbeds);
                     await delayDeleteMessages([statsMessage as Message, skillsMessage as Message])
-    
+
                 }
                 else {
                     const inbox = await inboxLinkButton(message.author);
@@ -146,23 +154,39 @@ const commandFile: ICommandInfo = {
                         }
                     )
                     if (message.channel.type !== 'DM') {
-                        const dmWarn = await message.reply({ embeds: [dmWarnEmbed], components: [inbox] });
+                        const dmWarn = await message.reply({
+                            allowedMentions: {
+                                repliedUser: false
+                            }, embeds: [dmWarnEmbed], components: [inbox]
+                        });
                         await delayDeleteMessages([dmWarn as Message], 60 * 1000)
                         const _ = await message.author.send({ embeds: [embed] });
                         const skillsDM = await message.author.send({ embeds: [skillsEmbeds[0]], components: [row1] });
                         await skillsButtonPagination(message.author.id, skillsDM, skillsEmbeds);
                     }
                     else {
-                        const _ = await message.reply({ embeds: [embed] });
-                        const skillsDM = await message.reply({ embeds: [skillsEmbeds[0]], components: [row1] });
+                        const _ = await message.reply({
+                            allowedMentions: {
+                                repliedUser: false
+                            }, embeds: [embed]
+                        });
+                        const skillsDM = await message.reply({
+                            allowedMentions: {
+                                repliedUser: false
+                            }, embeds: [skillsEmbeds[0]], components: [row1]
+                        });
                         await skillsButtonPagination(message.author.id, skillsDM as Message, skillsEmbeds);
                     }
-    
+
                 }
                 return true;
             }
             else {
-                const fail = await message.reply(`${userMention((await message.author.fetch()).id)} I didn't find any matches for your search ${bold(champName)}, please try again.`)
+                const fail = await message.reply({
+                    allowedMentions: {
+                        repliedUser: false
+                    }, content: `${userMention((await message.author.fetch()).id)} I didn't find any matches for your search ${bold(champName)}, please try again.`
+                })
                 return false;
             }
         }

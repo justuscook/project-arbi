@@ -58,7 +58,11 @@ const commandFile: ICommandInfo = {
                     i++;
                 }
                 if (allowShow && showInServer === true) {
-                    const skillsMessage = await message.reply({ embeds: [skillsEmbeds[0]], components: [row1] });
+                    const skillsMessage = await message.reply({
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [skillsEmbeds[0]], components: [row1]
+                    });
                     await skillsButtonPagination(message.author.id, skillsMessage as Message, skillsEmbeds);
                     await delayDeleteMessages([skillsMessage as Message])
 
@@ -71,13 +75,21 @@ const commandFile: ICommandInfo = {
                         }
                     )
                     if (message.channel.type !== 'DM') {
-                        const dmWarn = await message.reply({ embeds: [dmWarnEmbed], components: [inbox] });
+                        const dmWarn = await message.reply({
+                            allowedMentions: {
+                                repliedUser: false
+                            }, embeds: [dmWarnEmbed], components: [inbox]
+                        });
                         await delayDeleteMessages([dmWarn as Message], 60 * 1000)
                         const skillsDM = await message.author.send({ embeds: [skillsEmbeds[0]], components: [row1] });
                         await skillsButtonPagination(message.author.id, skillsDM, skillsEmbeds);
                     }
                     else {
-                        const skillsDM = await message.reply({ embeds: [skillsEmbeds[0]], components: [row1] });
+                        const skillsDM = await message.reply({
+                            allowedMentions: {
+                                repliedUser: false
+                            }, embeds: [skillsEmbeds[0]], components: [row1]
+                        });
                         await skillsButtonPagination(message.author.id, skillsDM as Message, skillsEmbeds);
                     }
 
@@ -85,7 +97,11 @@ const commandFile: ICommandInfo = {
             }
             else {
 
-                const fail = await message.reply(`${userMention((await message.author.fetch()).id)} I didn't find any matches for your search ${bold(champName)}, please try again.`)
+                const fail = await message.reply({
+                    allowedMentions: {
+                        repliedUser: false
+                    }, content: `${userMention((await message.author.fetch()).id)} I didn't find any matches for your search ${bold(champName)}, please try again.`
+                })
             }
             return true;
         }

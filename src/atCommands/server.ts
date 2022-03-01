@@ -26,7 +26,9 @@ const commandFile: ICommandInfo = {
                 }
             }
         )
-        await message.reply({embeds: [embed]})
+        await message.reply({allowedMentions: {
+            repliedUser: false
+        },embeds: [embed]})
         return true;
     },
     restricted: true

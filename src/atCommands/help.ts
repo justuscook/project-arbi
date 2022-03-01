@@ -39,11 +39,19 @@ const commandFile: ICommandInfo = {
                         inline: false
                     });
                 }
-                await message.reply({ embeds: [embed] });
+                await message.reply({
+                    allowedMentions: {
+                        repliedUser: false
+                    }, embeds: [embed]
+                });
             }
         }
         catch {
-            await message.reply(`There was an issue with your help command, it has been logged.  Please join the support server with /support if it continues to happen.`);
+            await message.reply({
+                allowedMentions: {
+                    repliedUser: false
+                }, content: `There was an issue with your help command, it has been logged.  Please join the support server with /support if it continues to happen.`
+            });
             return false;
         }
 
