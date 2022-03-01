@@ -12,6 +12,7 @@ import http from 'http';
 import tracer from 'tracer';
 import * as promClient from 'prom-client';
 import cors from 'cors';
+import axios from 'axios';
 
 const TOKEN = token;//change before pushing live!
 const CLIENTID = clientId;
@@ -55,10 +56,21 @@ app.get('/', (req: Request, res: Response) => {
 app.get('/', (req: Request, res: Response) => {
     res.status(200).send('test')
 });
-
 app.get('/online', (req: Request, res: Response) => {
     res.status(200).json({ status: 'online' })
 });
+
+app.post('/prom', async (req: Request, res: Response) => {
+    const response = await axios({ 
+        url: req.body.url,
+        method: 'GET',
+        responseType: 'json',
+        params:{
+            query: req.body.query
+        }
+     })
+    res.send(response.data);
+})
 app.post('/guideUpdate', async (req: Request, res: Response) => {
     const auth = await getAuthToken();
     //console.log('New guide approved!')
@@ -72,7 +84,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     });
     guideResponse.data = row.data.values[0];
     let dungeonGuide = false;
-    let tags =[];
+    let tags = [];
     (guideResponse.data[5].includes(',')) ? tags.push([...guideResponse.data[5].split(',')]) : tags.push(guideResponse.data[5].trim());
     if (guideResponse.data[1] === 'TRUE') dungeonGuide = true;
     let guide: IGuide = {
@@ -160,7 +172,7 @@ const httpServer = http.createServer(app);
 httpServer.listen(81, () => {
     console.log('HTTP Server listening on port 81');
 })
-try {    
+try {
     const httpsServer = https.createServer({
         key: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/privkey.pem'),
         cert: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/fullchain.pem')
@@ -251,6 +263,7 @@ client.on('interactionCreate', async interaction => {
         return interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
     }
 });
+
 
 client.login(TOKEN);
 
