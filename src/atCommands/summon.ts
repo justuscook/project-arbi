@@ -1,6 +1,9 @@
 import { bold, userMention } from "@discordjs/builders";
-import { Message } from "discord.js";
+import { Message, MessageAttachment, MessageEmbed } from "discord.js";
+import { createTenPullImage } from "../general/imageUtils";
+import { IChampPull } from "../general/IShardData";
 import { connectToCollection, connectToDB, fuzzySearch, getInput, IChampionInfo, ICommandInfo, IGuide } from "../general/util";
+import { v1 as uuidv1 } from 'uuid';
 
 const commandFile: ICommandInfo = {
     name: 'summon',
@@ -50,20 +53,50 @@ const commandFile: ICommandInfo = {
                 champsPulled.push({ champ: await getRandomChampion(champPool, shardType, 'epic'), rarity: 'epic' });
             }
         }
-
-
         let champsPulledText = '';
-        for (const c of champsPulled) {
-            const id = parseInt(c.champ) + 6;
-            const champ = champs.find(x => x.id === id);
-            champsPulledText += `${champ.name}\n`;
+            for (const c of champsPulled) {
+                const id = parseInt(c.champ) + 6;
+                const champ = champs.find(x => x.id === id);
+                champsPulledText += `${champ.name}, `;
+            }
+            champsPulledText = champsPulledText.trim()
+            champsPulledText = champsPulledText.slice(0, champsPulledText.length -1)
+        let legoAnimation: Message;
+        if (champsPulled.find(x => x.rarity === 'legendary')) {
+            legoAnimation = await message.channel.send('https://media.discordapp.net/attachments/558596438452600855/644460171937972227/legpull.gif')
         }
-        message.reply({
-            allowedMentions: {
-                repliedUser: false
-            }, content: `You pulled:\n${champsPulledText}`
-        });
+        if (champsPulled.length > 9) {
+            const tenPullImage = await createTenPullImage(champsPulled);
+            const id = uuidv1();
+            const imageFile: MessageAttachment = new MessageAttachment(Buffer.from(tenPullImage), `${id}.png`);
+
+            const embed: MessageEmbed = new MessageEmbed(
+                {
+                    image: {
+                        url: `attachment://${id}.png`
+                    },
+                    description: `You pulled:\n${champsPulledText}`
+                    
+                }
+            )
+            await legoAnimation.delete();
+            await message.reply({
+                files: [imageFile],
+                allowedMentions: {
+                    repliedUser: false
+                },embeds: [embed]
+            });
+        }
+        else{
+            await legoAnimation.delete();
+            await message.reply({
+                allowedMentions: {
+                    repliedUser: false
+                }, content: `You pulled:\n${champsPulledText}`
+            });
+        }
     }
+    
 
 }
 export default commandFile;
@@ -186,7 +219,3 @@ interface IChampionPool {
     }
 }
 
-interface IChampPull {
-    champ: string,
-    rarity: string
-}

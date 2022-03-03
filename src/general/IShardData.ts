@@ -85,4 +85,9 @@ export interface IShardData {
     affinity: string
     number: number
   }
+
+  export interface IChampPull {
+    champ: string,
+    rarity: string
+}
   
