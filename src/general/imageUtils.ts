@@ -5,33 +5,40 @@ import path from "path";
 import { isFunction } from "util";
 
 
-
-export async function createTenPullImage(champions: IChampPull[]): Promise<Buffer> {
-    const legendaries = champions.map(x => {
+export function champsByRarity(champions: IChampPull[]){
+    const legendaries = champions.filter(x => {
         if (x.rarity === 'legendary') {
             return x;
         }
     })
-    const epics = champions.map(x => {
+    const epics = champions.filter(x => {
         if (x.rarity === 'epic') {
             return x;
         }
     })
-    const rares = champions.map(x => {
+    const rares = champions.filter(x => {
         if (x.rarity === 'rare') {
             return x;
         }
     })
+
+    return {legendaries, epics, rares}
+
+}
+
+
+export async function createTenPullImage(champions: IChampPull[]): Promise<Buffer> {
+    const rarityList = champsByRarity(champions);
     if (champions.length >= 10) {
         let champsToRender = [];
-        if (legendaries.length > 0) {
-            champsToRender.push(...legendaries)
+        if (rarityList.legendaries.length > 0) {
+            champsToRender.push(...rarityList.legendaries)
         }
         if (champsToRender.length < 10) {
-            champsToRender.push(...epics)
+            champsToRender.push(...rarityList.epics)
         }
         if (champsToRender.length < 10) {
-            champsToRender.push(...rares)
+            champsToRender.push(...rarityList.rares)
         }
         if (champsToRender.length > 10) {
             champsToRender = champsToRender.slice(0, 10)

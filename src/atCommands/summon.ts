@@ -1,6 +1,6 @@
 import { bold, userMention } from "@discordjs/builders";
-import { Message, MessageAttachment, MessageEmbed } from "discord.js";
-import { createTenPullImage } from "../general/imageUtils";
+import { EmbedField, EmbedFieldData, Message, MessageAttachment, MessageEmbed } from "discord.js";
+import { champsByRarity, createTenPullImage } from "../general/imageUtils";
 import { IChampPull } from "../general/IShardData";
 import { connectToCollection, connectToDB, fuzzySearch, getInput, IChampionInfo, ICommandInfo, IGuide } from "../general/util";
 import { v1 as uuidv1 } from 'uuid';
@@ -53,14 +53,67 @@ const commandFile: ICommandInfo = {
                 champsPulled.push({ champ: await getRandomChampion(champPool, shardType, 'epic'), rarity: 'epic' });
             }
         }
+        const rarityList = champsByRarity(champsPulled);
+        /*
+        const sortedChampsPulled: IChampPull[] = [];
+        sortedChampsPulled.push(...rarityList.legendaries)
+        sortedChampsPulled.push(...rarityList.epics)
+        sortedChampsPulled.push(...rarityList.rares)
+        champsPulled = sortedChampsPulled;*/
+
         let champsPulledText = '';
-            for (const c of champsPulled) {
-                const id = parseInt(c.champ) + 6;
-                const champ = champs.find(x => x.id === id);
-                champsPulledText += `${champ.name}, `;
+        /*
+        for (const c of champsPulled) {
+            const id = parseInt(c.champ) + 6;
+            const champ = champs.find(x => x.id === id);
+            champsPulledText += `${champ.name}, `;
+        }
+        champsPulledText = champsPulledText.trim()
+        champsPulledText = champsPulledText.slice(0, champsPulledText.length - 1)
+        */
+
+
+        let legosField: EmbedField = {
+            name: 'Legendaries:',
+            inline: false,
+            value: ''
+        }
+        let epicsField: EmbedField = {
+            name: 'Epics:',
+            inline: false,
+            value: ''
+        }
+        let raresField: EmbedField = {
+            name: 'Rares:',
+            inline: false,
+            value: ''
+        }
+        if (rarityList.rares.length > 0) {
+            for (const r of rarityList.rares) {
+                const id = parseInt(r.champ) + 6;
+                const champ = champs.find(x => x.id ===  id);
+                raresField.value += `${champ}, `
             }
-            champsPulledText = champsPulledText.trim()
-            champsPulledText = champsPulledText.slice(0, champsPulledText.length -1)
+        }
+        if (rarityList.epics.length > 0) {
+
+            for (const r of rarityList.epics) {
+                const id = parseInt(r.champ) + 6;
+                const champ = champs.find(x => x.id ===  id);
+                epicsField.value += `${champ}, `
+            }
+        }
+        if (rarityList.legendaries.length > 0) {
+            for (const r of rarityList.legendaries) {
+                const id = parseInt(r.champ) + 6;
+                const champ = champs.find(x => x.id ===  id);
+                legosField.value += `${champ}, `
+            }
+        }
+        raresField.value = raresField.value.slice(0, raresField.value.length - 1)
+        epicsField.value = epicsField.value.slice(0, epicsField.value.length - 1)
+        legosField.value = legosField.value.slice(0, legosField.value.length - 1)
+        let embed: MessageEmbed;
         let legoAnimation: Message;
         if (champsPulled.find(x => x.rarity === 'legendary')) {
             legoAnimation = await message.channel.send('https://media.discordapp.net/attachments/558596438452600855/644460171937972227/legpull.gif')
@@ -70,33 +123,41 @@ const commandFile: ICommandInfo = {
             const id = uuidv1();
             const imageFile: MessageAttachment = new MessageAttachment(Buffer.from(tenPullImage), `${id}.png`);
 
-            const embed: MessageEmbed = new MessageEmbed(
+            embed = new MessageEmbed(
                 {
                     image: {
                         url: `attachment://${id}.png`
-                    },
-                    description: `You pulled:\n${champsPulledText}`
-                    
+                    }
+
                 }
             )
+            if (rarityList.rares.length > 0) {
+                embed.fields.push(raresField)
+            }
+            if (rarityList.epics.length > 0) {
+                embed.fields.push(epicsField)
+            }
+            if (rarityList.legendaries.length > 0) {
+                embed.fields.push(legosField)
+            }
             await legoAnimation.delete();
             await message.reply({
                 files: [imageFile],
                 allowedMentions: {
                     repliedUser: false
-                },embeds: [embed]
+                }, embeds: [embed]
             });
         }
-        else{
+        else {
             await legoAnimation.delete();
             await message.reply({
                 allowedMentions: {
                     repliedUser: false
-                }, content: `You pulled:\n${champsPulledText}`
+                }, embeds: [embed]
             });
         }
     }
-    
+
 
 }
 export default commandFile;
