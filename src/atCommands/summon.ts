@@ -2,7 +2,7 @@ import { bold, userMention } from "@discordjs/builders";
 import { EmbedField, EmbedFieldData, Message, MessageAttachment, MessageEmbed } from "discord.js";
 import { champsByRarity, createTenPullImage } from "../general/imageUtils";
 import { IChampPull } from "../general/IShardData";
-import { connectToCollection, connectToDB, fuzzySearch, getInput, IChampionInfo, ICommandInfo, IGuide } from "../general/util";
+import { clipText, connectToCollection, connectToDB, fuzzySearch, getInput, IChampionInfo, ICommandInfo, IGuide } from "../general/util";
 import { v1 as uuidv1 } from 'uuid';
 
 const commandFile: ICommandInfo = {
@@ -91,28 +91,28 @@ const commandFile: ICommandInfo = {
         if (rarityList.rares.length > 0) {
             for (const r of rarityList.rares) {
                 const id = parseInt(r.champ) + 6;
-                const champ = champs.find(x => x.id ===  id);
-                raresField.value += `${champ}, `
+                const champ = champs.find(x => x.id === id);
+                raresField.value += `${champ.name}, `
             }
         }
         if (rarityList.epics.length > 0) {
 
             for (const r of rarityList.epics) {
                 const id = parseInt(r.champ) + 6;
-                const champ = champs.find(x => x.id ===  id);
-                epicsField.value += `${champ}, `
+                const champ = champs.find(x => x.id === id);
+                epicsField.value += `${champ.name}, `
             }
         }
         if (rarityList.legendaries.length > 0) {
             for (const r of rarityList.legendaries) {
                 const id = parseInt(r.champ) + 6;
-                const champ = champs.find(x => x.id ===  id);
-                legosField.value += `${champ}, `
+                const champ = champs.find(x => x.id === id);
+                legosField.value += `${champ.name}, `
             }
         }
-        raresField.value = raresField.value.slice(0, raresField.value.length - 1)
-        epicsField.value = epicsField.value.slice(0, epicsField.value.length - 1)
-        legosField.value = legosField.value.slice(0, legosField.value.length - 1)
+        raresField.value = clipText(raresField.value.slice(0, raresField.value.length - 2))
+        epicsField.value = clipText(epicsField.value.slice(0, epicsField.value.length - 2))
+        legosField.value = clipText(legosField.value.slice(0, legosField.value.length - 2))
         let embed: MessageEmbed;
         let legoAnimation: Message;
         if (champsPulled.find(x => x.rarity === 'legendary')) {
@@ -131,15 +131,16 @@ const commandFile: ICommandInfo = {
 
                 }
             )
-            if (rarityList.rares.length > 0) {
-                embed.fields.push(raresField)
+            if (rarityList.legendaries.length > 0) {
+                embed.fields.push(legosField)
             }
             if (rarityList.epics.length > 0) {
                 embed.fields.push(epicsField)
             }
-            if (rarityList.legendaries.length > 0) {
-                embed.fields.push(legosField)
+            if (rarityList.rares.length > 0) {
+                embed.fields.push(raresField)
             }
+
             await legoAnimation.delete();
             await message.reply({
                 files: [imageFile],

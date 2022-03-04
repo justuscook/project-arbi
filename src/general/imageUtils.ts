@@ -29,8 +29,8 @@ export function champsByRarity(champions: IChampPull[]){
 
 export async function createTenPullImage(champions: IChampPull[]): Promise<Buffer> {
     const rarityList = champsByRarity(champions);
-    if (champions.length >= 10) {
-        let champsToRender = [];
+    let champsToRender: IChampPull[] = [];
+    if (champions.length >= 10) {       
         if (rarityList.legendaries.length > 0) {
             champsToRender.push(...rarityList.legendaries)
         }
@@ -49,7 +49,7 @@ export async function createTenPullImage(champions: IChampPull[]): Promise<Buffe
     }
     //const legopull = await message.channel.createMessage('https://media.discordapp.net/attachments/558596438452600855/644460171937972227/legpull.gif');
     const pullImages: Buffer[] = [];
-    const pullIDs = champions.map(x => {
+    const pullIDs = champsToRender.map(x => {
         return x.champ;
     });
     for (const id of pullIDs) {

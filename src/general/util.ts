@@ -17,6 +17,15 @@ import { client, leaderboard } from "../arbi";
 import { text } from "body-parser";
 import { isArray } from "util";
 
+
+export function clipText(text: string): string {
+    if (text.length > 1000) {
+        return text.slice(0, 1000) + '...';
+    }
+    else {
+        return text;
+    }
+}
 /*
 export interface ICommand {
     execute: Promise<boolean>,
