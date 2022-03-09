@@ -21,12 +21,12 @@ export interface IShardEvent {
 
 export interface IShardData {
     _id?: string;
-    userID: string
-    tokens: number
-    lastClaim: Date
-    mercy: Mercy
-    shards: Shards
-    champions: Champions
+    userID?: string
+    tokens?: number
+    lastClaim?: Date
+    mercy?: Mercy
+    shards?: Shards
+    champions?: Champions
   }
   
   export interface Mercy {
@@ -88,6 +88,13 @@ export interface IShardData {
 
   export interface IChampPull {
     champ: string,
-    rarity: string
+    rarity: string,
+    affinity?: string
 }
   
+export function msToTime(duration: number) {
+  let seconds = Math.floor((duration / 1000) % 60);
+  let minutes = Math.floor((duration / (1000 * 60)) % 60);
+  let hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
+  return `${(hours > 0) ? hours + " hours" : ""} ${(minutes > 0) ? minutes + " minutes" : ""}${(seconds > 0) ? " and " + seconds + " seconds" : ""}`
+}
