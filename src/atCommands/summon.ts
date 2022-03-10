@@ -10,7 +10,7 @@ const commandFile: ICommandInfo = {
     name: 'summon',
     execute: async (message: Message): Promise<boolean> => {
         //check events
-        const mongoClient = await connectToDB();
+        let mongoClient = await connectToDB();
         let collection = await connectToCollection('user_shard_data', mongoClient);
         let userData: IShardData = await collection.findOne<IShardData>({ userID: message.author.id })
         if (!userData) {
@@ -107,6 +107,7 @@ const commandFile: ICommandInfo = {
             })
             return false;
         }
+        collection = await connectToCollection('shard_data', mongoClient);
         const champPool = await collection.findOne<IChampionPool>({});
         collection = await connectToCollection('champion_info', mongoClient);
         const champs = await collection.find<IChampionInfo>({}).toArray();
@@ -214,27 +215,22 @@ const commandFile: ICommandInfo = {
             }
         }
         userData.tokens = userData.tokens - shardsToPull;
-        await collection.updateOne(
+        const mongoClient2 = await connectToDB();
+        const collection2 = await connectToCollection('user_shard_data', mongoClient2);
+        await collection2.updateOne(
             { userID: message.author.id },
             { $set: userData },
             { upsert: true },
             async (err: any, result: any) => {
 
                 if (err) {
-                    await message.channel.send(`╯︿╰ There seems to be an issue claiming your tokens, this is logged and we are looking into it.`)
+                    console.log(err)
+                    await message.channel.send(`╯︿╰ There seems to be an issue summoning your shards, this is logged and we are looking into it.`)
                     await mongoClient.close();
                     return false;
                 }
-                else {
-                    await message.reply({
-                        allowedMentions: {
-                            repliedUser: false
-                        }, embeds: [embed],
+                else await mongoClient.close();
 
-
-                    });
-                    await mongoClient.close();
-                }
             });
         await mongoClient.close();
         raresField.value = clipText(raresField.value.slice(0, raresField.value.length - 2))
@@ -254,8 +250,8 @@ const commandFile: ICommandInfo = {
                 {
                     image: {
                         url: `attachment://${id}.png`
-                    }
-
+                    },
+                    description: `Here is what you pulled from ${shardsToPull} ${shardType} shard(s):`
                 }
             )
             if (rarityList.legendaries.length > 0) {
@@ -268,7 +264,9 @@ const commandFile: ICommandInfo = {
                 embed.fields.push(raresField)
             }
             setTimeout(async () => {
-                await legoAnimation.delete();
+                if (legoAnimation) {
+                    await legoAnimation.delete();
+                }
                 await message.reply({
                     files: [imageFile],
                     allowedMentions: {
@@ -279,8 +277,24 @@ const commandFile: ICommandInfo = {
 
         }
         else {
+            embed = new MessageEmbed(
+                {
+                    description: `Here is what you pulled from ${shardsToPull} ${shardType} shard(s):`
+                }
+            )
+            if (rarityList.legendaries.length > 0) {
+                embed.fields.push(legosField)
+            }
+            if (rarityList.epics.length > 0) {
+                embed.fields.push(epicsField)
+            }
+            if (rarityList.rares.length > 0) {
+                embed.fields.push(raresField)
+            }
             setTimeout(async () => {
-                await legoAnimation.delete();
+                if (legoAnimation) {
+                    await legoAnimation.delete();
+                }
                 await message.reply({
                     allowedMentions: {
                         repliedUser: false
