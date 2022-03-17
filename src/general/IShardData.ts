@@ -63,28 +63,17 @@ export interface IShardData {
   }
   
   export interface Champions {
-    rare: Rare[]
-    epic: Epic[]
-    legendary: Legendary[]
+    rare: Champion[]
+    epic: Champion[]
+    legendary: Champion[]
   }
   
-  export interface Rare {
+  export interface Champion {
     name: string
     affinity: string
     number: number
   }
   
-  export interface Epic {
-    name: string
-    affinity: string
-    number: number
-  }
-  
-  export interface Legendary {
-    name: string
-    affinity: string
-    number: number
-  }
 
   export interface IChampPull {
     champ: string,

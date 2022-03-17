@@ -236,11 +236,13 @@ client.on('messageCreate', async (message: Message) => {
         }
     }
     const commandSuccess: Promise<boolean> = await command.execute(message);
+    AddCommandToTotalCommands(commandName)
     if (commandSuccess) {
-        AddCommandToTotalSuccessfulCommands(command.ame);
+        console.log(commandName)
+        AddCommandToTotalSuccessfulCommands(commandName);
     }
     else {
-        AddCommandToTotalFailedCommands(command.name);
+        AddCommandToTotalFailedCommands(commandName);
     }
 
 })
