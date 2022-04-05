@@ -1,0 +1,110 @@
+[
+    {
+        "name": "Continuous Heal",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960536958680059934/unknown.png",
+        "desc": "Heals the target Champion by 7.5 / 15% of their MAX HP at the beginning of their turn.",
+        "type": "buff"
+    },
+    {
+        "name": "Increase ATK",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537030025166898/unknown.png",
+        "desc": "Increases the Champion’s Battle ATK (current ATK value) by 25 / 50%.",
+        "type": "buff"
+    },
+    {
+        "name": "Increase DEF",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537053521649694/unknown.png",
+        "desc": "Increases the Champion’s Battle DEF by 30 / 60%.",
+        "type": "buff"
+    },
+    {
+        "name": "Increase SPD",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537074698702928/unknown.png",
+        "desc": "Increases the Champion’s Battle SPD by 15 / 30%.",
+        "type": "buff"
+    },
+    {
+        "name": "Increase C.RATE",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537033917476894/unknown.png",
+        "desc": "Increases the Champion’s C.DMG by 15 / 30%.",
+        "type": "buff"
+    },
+    {
+        "name": "Increase ACC",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960540431043686470/unknown.png",
+        "desc": "Increases Accuracy in the battles by 25% / 50%.",
+        "type": "buff"
+    },
+    {
+        "name": "Strengthen",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960539622407032852/unknown.png",
+        "desc": "Reduces the value of the received damage by 15 / 25 %.",
+        "type": "buff"
+    },
+    {
+        "name": "Block Damage",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960536924043497472/unknown.png",
+        "desc": "Makes the Champion immune to all forms of damage.",
+        "type": "buff"
+    },
+    {
+        "name": "Reflect Damage",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537091731783680/unknown.png",
+        "desc": "The attacker will take back 15/30% of the damage dealt.",
+        "type": "buff"
+    },
+    {
+        "name": "Ally Protection",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960536890623275048/unknown.png",
+        "desc": "The Caster Champion takes 25/50% of direct damage inflicted upon the Target Champion. Self-inflicted damage (HP Burn or Poison) does not trigger this effect. Each Champion uses its own DEF value for mitigating damage.",
+        "type": "buff"
+    },
+    {
+        "name": "Block Debuffs",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960536940162199572/unknown.png",
+        "desc": "While this buff is active, the Champion is immune to all debuffs. Instant negative effects such as Decrease Turn Meter are not affected and work as normal.",
+        "type": "buff"
+    },
+    {
+        "name": "Revive On Death",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537112279650325/unknown.png",
+        "desc": "If a Champion with this buff dies, he or she will immediately revive with 30% HP and 0% Turn Meter.",
+        "type": "buff"
+    },
+    {
+        "name": "Counterattack",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960536976887541820/unknown.png",
+        "desc": "When attacked, the Champion with this buff strikes back at their attacker using their Default Skill. This attack deals 75% of the normal Default Skill damage. Can only counterattack once when attacked with a Multi-hit Skill. Does not counterattack in response to the enemy’s own counterattack. Does not count as a Turn.",
+        "type": "buff"
+    },
+    {
+        "name": "Shield",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537129274982410/unknown.png",
+        "desc": "The Champion’s HP bar is reinforced for X Turns with a Shield effect. Damage is calculated normally but is first applied to the Shield (unless the attack ignores Shields, which is stated in the Skill description). When the buff expires, or the Shield value reaches 0, the Shield is removed, and further damage applies as normal.\nNote: damage dealt to the Shield does not count as damage dealt to the Champion, so Effects such as Lifesteal do not benefit from it.",
+        "type":"buff"
+    },
+    {
+        "name": "Artifact Shield",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537148740734986/unknown.png",
+        "desc": "This Buff grants additional Artifact Shield HP for x turns. Artifact Shield reinforces the Champion’s HP bar like a regular Shield does. Artifact Shield can be obtained from Artifact Sets. Please note: Artifact Shield can be active in parallel with Shield; however, the damage will be counted towards that Shield, which was applied earlier.",
+        "type":"buff"
+    },
+    {
+        "name": "Unkillable",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537169733247006/unknown.png",
+        "desc": "The Champion cannot fall below 1 HP when this buff is active.",
+        "type": "buff"
+    },
+    {
+        "name": "Veil I - II",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960538358776463360/unknown.png",
+        "desc": "This Buff has two tiers: [Veil] and [Perfect Veil]. The Champion under either of these Buffs cannot be chosen as a target by the enemy.\nNote: if all remaining Champions on your team have an active Veil or Perfect Veil effect, the enemy will no longer be restricted in choosing a target.\nI - the Effect is removed if a Champion uses active damage skills.\nII - is not removed after a damage skill.\nReduces damage from AOE skills. I - 7.5%, II - 15%.\nSome Champions have skills that steal Buffs. Veil and Perfect Veil are exceptions - the enemy will not be able to steal them.",
+        "type":"buff"
+    },
+    {
+        "name": "Increase RES",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960538554944061510/unknown.png",
+        "desc": "Increases the Champion's Battle RES by 25 / 50 %. ",
+        "type": "buff"
+    }
+]

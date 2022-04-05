@@ -4,7 +4,7 @@ import { stringify } from 'querystring';
 import { inboxLinkButton } from '../general/util'
 import fs from 'fs';
 import * as util from '../general/util'
-import { logger } from '../arbi';
+import { client, logger } from '../arbi';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
@@ -17,19 +17,7 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
     try {
-        let commandName = interaction.options.getString('command_name')
-        let canShow = await util.canShow(interaction);
-        let showInServer = false;
-        if (commandName !== null) {
-            if (commandName.toLowerCase().includes('show')) {
-                showInServer = true;
-                commandName = util.removeShow(commandName).trimEnd().trimStart();
-                commandName = commandName;
-            }
-        }
-        console.log(commandName)
-        //const commands = await interaction.client.application.commands.fetch();
-        const commands = await interaction.client.application.commands.fetch();
+        const commands = await client.application.commands.fetch();
         const embed: MessageEmbed = new MessageEmbed({
             description: `${userMention((await interaction.user.fetch()).id)} Here is a list of my commands!`,
         });
@@ -48,42 +36,36 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             })
             //console.lo
         }
-        const command = commands.find(x => x.name.toLowerCase() === commandName)
-        if (command === undefined) {
-            for (const c of commands) {
-                embed.fields.push({
-                    name: c[1].name,
-                    value: `Description: ${c[1].description}`,
-                    inline: false
-                });
+        embed.fields.push(
+            {
+                inline: false,
+                name: 'Command versions',
+                value: `Each command has a @ (Arbie mention - @Arbie) and a slash version (/command).  Each version takes the same input, but you supply it a different way.  The @ commands are the old way commands worked, all info is typed out at once like "@Arbie summon sacred 10".  For slash commands, once you choose a command that needs input, you will see a input variable with a name appear.  Then you will type what you normaly type after the command. For example "/summon input: sacred 10".  Other than that the command should be have in the same way!  As always you can use /support or @Arbie support to join the support server and ask for more help!`
             }
-        } else {
+        )
+        for (const c of commands) {
             embed.fields.push({
-                name: 'How to use:',
-                value: (commandUsage.find(x => x.name.toLowerCase() === commandName.toLowerCase()).usage !== undefined) ? commandUsage.find(x => x.name.toLowerCase() === commandName.toLowerCase()).usage : command.description,
+                name: c[1].name,
+                value: `Description: ${c[1].description}`,
                 inline: false
-            })
-            embed.description = `Here is more info about ${command.name!}`;
+            });
         }
-        if (canShow && showInServer) {
-            //await interaction.followUp({ content: `${userMention(interaction.user.id)} I sent my help command output to your inbox, click below to check!`, components: [await inboxLinkButton(interaction.user)] })
-            await interaction.followUp({ embeds: [embed] })
-        }
-        else {
-            console.log('test')
-            if (interaction.channel !== null) {
-                const help = await interaction.followUp({ content: `${userMention((await interaction.user.fetch()).id)}${(showInServer) ? 'You can\'t show commands in this server.' : ''} I sent my help command output to your inbox, click below to check!`, components: [await inboxLinkButton(interaction.user)] })
-                await util.delayDeleteMessages([help as Message])
-            }
-            await interaction.user.send({ embeds: [embed] })
-        }
-
-        return true;
+        await interaction.followUp({
+            allowedMentions: {
+                repliedUser: false
+            }, embeds: [embed]
+        });
     }
-    catch (err) {
-        logger.error(err)
+
+    catch {
+        await interaction.followUp({
+            allowedMentions: {
+                repliedUser: false
+            }, content: `There was an issue with your help command, it has been logged.  Please join the support server with /support if it continues to happen.`
+        });
         return false;
     }
+
 }
 
 export const usage = `/help - for basic help\n/help ${bold('tab')} command_name - for info about a command`;

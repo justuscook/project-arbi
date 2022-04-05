@@ -1,8 +1,8 @@
-import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, Intents, ApplicationCommandResolvable, Util, TextChannel, User, Message, Interaction, MessageEmbed } from 'discord.js';
+import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, Intents, ApplicationCommandResolvable, Util, TextChannel, User, Message, Interaction, MessageEmbed, GuildChannel } from 'discord.js';
 import fs from 'fs';
 import express, { Response, Request } from 'express';
 import { clientId, testClientId, guildIDs, token, testToken } from './config.json';
-import { connectToCollection, connectToDB, Data, getAuthToken, getLeaderboard, getSpreadSheetValues, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
+import { connectToCollection, connectToDB, Data, getAuthToken, getLeaderboard, getSpreadSheetValues, getTop, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
 import { auth } from 'google-auth-library';
 import { uploadImage } from './general/util';
 import { userMention } from '@discordjs/builders';
@@ -12,10 +12,30 @@ import tracer from 'tracer';
 import * as promClient from 'prom-client';
 import cors from 'cors';
 import axios from 'axios';
+import { IShardData } from './general/IShardData';
 
-const TOKEN = token;//change before pushing live!
-const CLIENTID = clientId;
+
+
+let TOKEN = token;//change before pushing live!
+let CLIENTID = clientId;
+
+let ip = '';
+ axios({
+    url: 'https://api.ipify.org?format=json',
+    method: 'GET',
+    responseType: 'json',
+}).then(response => {
+    ip = response.data.ip
+})
+ 
+if(ip !== '144.172.71.45'){
+    TOKEN = testToken;
+    CLIENTID = testClientId
+}
+
+
 export let leaderboard: Map<string, number>;
+export let topText: string;
 export const superUsers = ['227837830704005140', '269643701888745474', '205448080797990912']
 
 export const logger = tracer.dailyfile({
@@ -72,6 +92,7 @@ app.post('/prom', async (req: Request, res: Response) => {
     res.send(response.data);
 })
 app.post('/guideUpdate', async (req: Request, res: Response) => {
+    const chan = await client.channels.fetch('898601285748662332') as TextChannel;//guide-submission-reports
     const auth = await getAuthToken();
     //console.log('New guide approved!')
     res.status(200).send('Bot recieved needed info!');
@@ -101,6 +122,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     const topUpload = await uploadImage(guideResponse.data[9], client, auth);
     const midUpload = await uploadImage(guideResponse.data[12], client, auth);
     const botUpload = await uploadImage(guideResponse.data[15], client, auth);
+
     guidesSlides.push(
         {
             desc: guideResponse.data[8],
@@ -119,12 +141,21 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
             image: (guideResponse.data[16]) ? guideResponse.data[16] : botUpload
         })
     }
+    let failedImages = '';
+    for (const g of guidesSlides) {
+        if (g.image.includes('failed')) {
+            failedImages += g.image + '\n';
+        }
+    }
+    if (failedImages !== '') {
+        await chan.send(`There here errors downloading some images:\n${failedImages}`);
+    }
     if (guideResponse.data[18] !== '') {
         guide.order = parseInt(guideResponse.data[18]);
     }
     guide.data.push(...guidesSlides);
     const guideErrors = validateGuide(guide);
-    const chan = await client.channels.fetch('898601285748662332') as TextChannel;//guide-submission-reports
+
     let guider: User;
     if (guideResponse.user === '') guideResponse.user = 'noPing';
     if (guideResponse.user !== 'noPing') {
@@ -150,13 +181,14 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
     await updateFormat(guideResponse.sheetId, guideResponse.range, auth);
     const mongoClient = await connectToDB();
     const collection = await connectToCollection('guides', mongoClient);
-    const guides = collection.updateOne(
+    const guides = await collection.updateOne(
         { title: guide.title },
         { $set: guide },
         { upsert: true },
         async (err: any, result: any) => {
             if (err) {
                 await chan.send(`╯︿╰ The guide submission/update failed.\n${err}`)
+                await mongoClient.close();
             }
             else {
                 await mongoClient.close();
@@ -208,9 +240,12 @@ client.once('ready', async () => {
     const num = await client.guilds.fetch();
     bot_guilds_total.set(num.size);
     leaderboard = await getLeaderboard();
+    topText = await getTop();
+    console.log(topText)
     setInterval(async () => {
+        topText = await getTop();
+        console.log(topText)
         leaderboard = await getLeaderboard();
-        console.log(leaderboard);
     }, 900000);
     /*
     const collection = await connectToCollection('guides');
@@ -225,8 +260,10 @@ client.once('ready', async () => {
 
 
 client.on('messageCreate', async (message: Message) => {
+
     if (!message.mentions.has(client.user.id)) return;
     if (message.content.includes("@here") || message.content.includes("@everyone")) return;
+
     const commandName = message.content.split(' ')[1];
     const command = client.atCommands.get(commandName)
     if (!command) return;
@@ -235,14 +272,21 @@ client.on('messageCreate', async (message: Message) => {
             return;
         }
     }
-    const commandSuccess: Promise<boolean> = await command.execute(message);
-    AddCommandToTotalCommands(commandName)
-    if (commandSuccess) {
-        console.log(commandName)
-        AddCommandToTotalSuccessfulCommands(commandName);
-    }
-    else {
-        AddCommandToTotalFailedCommands(commandName);
+    try {
+        const commandSuccess: Promise<boolean> = await command.execute(message);
+        AddCommandToTotalCommands(commandName)
+        if (commandSuccess) {
+            console.log(commandName)
+            AddCommandToTotalSuccessfulCommands(commandName);
+        }
+        else {
+            AddCommandToTotalFailedCommands(commandName);
+        }
+    } catch (error) {
+        logger.error(error);
+        const errorChan: TextChannel = await client.channel.fetch('958715861743579187');
+        await errorChan.send(`${await client.user.fetch('269643701888745474')}Error in ${command.data.name}: \n${error}`);
+        return message.reply({ content: 'There was an error while executing this command!' });
     }
 
 })
@@ -251,7 +295,7 @@ client.on('messageCreate', async (message: Message) => {
  */
 
 client.on('interactionCreate', async interaction => {
-    if (!interaction.isCommand()) return;
+    if (!interaction.isCommand() || !(interaction.isContextMenu)) return;
 
     const command: any = client.commands.get(interaction.commandName);
 
@@ -267,11 +311,12 @@ client.on('interactionCreate', async interaction => {
             AddCommandToTotalFailedCommands(command.data.name);
         }
     } catch (error) {
-        console.error(error);
-        return interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        logger.error(error);
+        const errorChan: TextChannel = await client.channel.fetch('958715861743579187');
+        await errorChan.send(`${await client.user.fetch('269643701888745474')}Error in ${command.data.name}: \n${error}`);
+        return interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
     }
 });
-
 
 client.login(TOKEN);
 
@@ -349,13 +394,14 @@ async function deployCommands() {
 
     for (const file of commandFiles) {
         const command = require(__dirname + `/commands/${file}`);
-        //command.registerforTesting = true;
+        if(ip !== '144.172.71.45')command.registerforTesting = true;
         if (command.registerforTesting === true) {
             commands.push(command.data.toJSON());
         }
         else {
             globalCommands.push(command.data.toJSON());
         }
+
     }
 
     const rest = new REST({ version: '9' }).setToken(TOKEN);
@@ -395,17 +441,7 @@ async function deployCommands() {
                 const responseGlobal = await rest.put(
                     Routes.applicationCommands(CLIENTID),
                     { body: globalCommands },
-                );
-
-                for (const rg of responseGlobal) {
-                    const command = client.application?.commands.fetch(rg.id);
-                    const commandFile = require(__dirname + `/commands/${rg.name}`);
-                    if (command.defaultPermission === false) {
-                        const permissions = commandFile.permissions
-                        await command.permissions.set({ permissions });
-                    }
-                }
-            }
+                );            }
             console.log(`Successfully registered application commands globally!`);
             for (const g of guildIDs) {
                 const response = await rest.put(

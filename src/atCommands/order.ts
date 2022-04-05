@@ -13,7 +13,7 @@ const commandFile: ICommandInfo = {
             const mongoClient = await connectToDB();
             const collection = await connectToCollection('guides', mongoClient);
             const guides = await collection.find<IGuide>({}).toArray();
-            await mongoClient.close()
+            
             /*if (isNaN(order)) {
                 message.reply(`${userMention(message.author.id)} I couldnt tell what number to use for the order!`)
                 return true;
@@ -52,7 +52,7 @@ const commandFile: ICommandInfo = {
                     });
                     return;
                 }
-                if ((!m.content.includes('a') && !m.content.includes('b')) || m.content.length != found.length) {
+                if ((!m.content.toLowerCase().includes('a') && !m.content.toLowerCase().includes('b')) || m.content.length != found.length) {
                     message.reply({
                         allowedMentions: {
                             repliedUser: false

@@ -16,6 +16,7 @@ import { distance } from 'fastest-levenshtein';
 import { client, leaderboard } from "../arbi";
 import { text } from "body-parser";
 import { isArray } from "util";
+import { IShardData } from "./IShardData";
 
 
 export function clipText(text: string): string {
@@ -778,6 +779,64 @@ export function getInput(input: string): string {
 interface LeaderboardUser {
     username: string,
     numberOfGuides: number
+}
+
+export async function getTop(): Promise<string> {
+    const mongoClient = await connectToDB();
+    const collection = await connectToCollection('user_shard_data', mongoClient);
+    const top100: IShardData[] = await collection.aggregate([
+        {
+            // create new field for the sum
+            "$set": {
+                "pulledSum": {
+                    "$sum": [
+                        "$shards.ancient.pulled",
+                        "$shards.void.pulled",
+                        "$shards.sacred.pulled"
+                    ]
+                }
+            }
+        },
+        {
+            // sort on the sum
+            "$sort": {
+                "pulledSum": -1
+            }
+        },
+        {
+            // limit to the desired number
+            "$limit": 25
+        },
+        {
+            // don't return some fields
+            "$unset": [
+                "_id",
+                "pulledSum"
+            ]
+        }
+    ]).toArray();
+    await mongoClient.close();
+    let top100Text = '';
+    let i = 1;
+    for (const t of top100) {
+        let emoji = '';
+        switch (i) {
+            case 1:
+                emoji = '🥇'
+                break;
+            case 2:
+                emoji = '🥈'
+                break;
+            case 3:
+                emoji = '🥉'
+                break;
+        }
+        const user = await client.users.fetch(t.userID);
+        top100Text += `${(emoji !== '') ? `${emoji} ` : `${i}: `}${user.username}#${user.discriminator}: ${t.shards.ancient.pulled + t.shards.sacred.pulled + t.shards.void.pulled}\n`
+        i++;
+    }
+    
+    return top100Text;
 }
 export async function getLeaderboard(): Promise<Map<string, number>> {
     const mongoClient = await connectToDB();

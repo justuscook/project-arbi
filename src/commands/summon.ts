@@ -20,7 +20,7 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
-    
+
     let mongoClient = await connectToDB();
     let collection = await connectToCollection('user_shard_data', mongoClient);
     let userData: IShardData = await collection.findOne<IShardData>({ userID: interaction.user.id })
@@ -122,7 +122,17 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     const champPool = await collection.findOne<IChampionPool>({});
     collection = await connectToCollection('champion_info', mongoClient);
     const champs = await collection.find<IChampionInfo>({}).toArray();
-
+    switch (shardType) {
+        case 'ancient':
+            userData.shards.ancient.pulled += shardsToPull;
+            break;
+        case 'void':
+            userData.shards.void.pulled += shardsToPull;
+            break;
+        case 'sacred':
+            userData.shards.sacred.pulled += shardsToPull;
+            break;
+    }
     let champsPulled: IChampPull[] = [];
 
     //const epicRate = getRate('epic', shardType);
@@ -238,13 +248,14 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             if (err) {
                 console.log(err)
                 await interaction.followUp(`╯︿╰ There seems to be an issue summoning your shards, this is logged and we are looking into it.`)
-                await mongoClient.close();
+                await mongoClient2.close();
                 return false;
             }
-            else await mongoClient.close();
+            else await mongoClient2.close();
 
         });
     await mongoClient.close();
+    await mongoClient2.close();
     raresField.value = clipText(raresField.value.slice(0, raresField.value.length - 2))
     epicsField.value = clipText(epicsField.value.slice(0, epicsField.value.length - 2))
     legosField.value = clipText(legosField.value.slice(0, legosField.value.length - 2))
@@ -253,7 +264,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     if (champsPulled.find(x => x.rarity === 'legendary')) {
         legoAnimation = await interaction.followUp('https://media.discordapp.net/attachments/558596438452600855/644460171937972227/legpull.gif') as Message;
     }
-    if (champsPulled.length > 9) {
+    if (champsPulled.length > 9) {try {
         const tenPullImage = await createTenPullImage(champsPulled);
         const id = uuidv1();
         const imageFile: MessageAttachment = new MessageAttachment(Buffer.from(tenPullImage), `${id}.png`);
@@ -287,6 +298,17 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             });
         }, 1000)
         return true;
+    }
+    catch (err) {
+        if (legoAnimation) {
+            await legoAnimation.delete();
+        }
+        await interaction.followUp({
+            allowedMentions: {
+                repliedUser: false
+            }, embeds: [embed]
+        });
+    }
 
     }
     else {

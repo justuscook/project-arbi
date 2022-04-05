@@ -32,6 +32,13 @@ const commandFile: ICommandInfo = {
                     })
                     //console.lo
                 }
+                embed.fields.push(
+                    {
+                        inline: false,
+                        name: 'Command versions',
+                        value: `Each command has a @ (Arbie mention - @Arbie) and a slash version (/command).  Each version takes the same input, but you supply it a different way.  The @ commands are the old way commands worked, all info is typed out at once like "@Arbie summon sacred 10".  For slash commands, once you choose a command that needs input, you will see a input variable with a name appear.  Then you will type what you normaly type after the command. For example "/summon input: sacred 10".  Other than that the command should be have in the same way!  As always you can use /support or @Arbie support to join the support server and ask for more help!`
+                    }
+                )
                 for (const c of commands) {
                     embed.fields.push({
                         name: c[1].name,

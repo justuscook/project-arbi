@@ -85,6 +85,7 @@ const commandFile: ICommandInfo = {
                         repliedUser: false
                     }, embeds: [claimed]
                 });
+                await mongoClient.close();
                 return true;
             }
         }
@@ -162,7 +163,6 @@ const commandFile: ICommandInfo = {
                     await mongoClient.close();
                 }
             });
-
         return true;
     }
 }

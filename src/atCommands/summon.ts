@@ -111,7 +111,17 @@ const commandFile: ICommandInfo = {
         const champPool = await collection.findOne<IChampionPool>({});
         collection = await connectToCollection('champion_info', mongoClient);
         const champs = await collection.find<IChampionInfo>({}).toArray();
-
+        switch (shardType) {
+            case 'ancient':
+                userData.shards.ancient.pulled += shardsToPull;
+                break;
+            case 'void':
+                userData.shards.void.pulled += shardsToPull;
+                break;
+            case 'sacred':
+                userData.shards.sacred.pulled += shardsToPull;
+                break;
+        }
         let champsPulled: IChampPull[] = [];
 
         //const epicRate = getRate('epic', shardType);
@@ -131,23 +141,8 @@ const commandFile: ICommandInfo = {
         }
         const rarityList = champsByRarity(champsPulled);
 
-        /*
-        const sortedChampsPulled: IChampPull[] = [];
-        sortedChampsPulled.push(...rarityList.legendaries)
-        sortedChampsPulled.push(...rarityList.epics)
-        sortedChampsPulled.push(...rarityList.rares)
-        champsPulled = sortedChampsPulled;*/
-
         let champsPulledText = '';
-        /*
-        for (const c of champsPulled) {
-            const id = parseInt(c.champ) + 6;
-            const champ = champs.find(x => x.id === id);
-            champsPulledText += `${champ.name}, `;
-        }
-        champsPulledText = champsPulledText.trim()
-        champsPulledText = champsPulledText.slice(0, champsPulledText.length - 1)
-        */
+
         let legosField: EmbedField = {
             name: 'Legendaries:',
             inline: false,
@@ -216,6 +211,7 @@ const commandFile: ICommandInfo = {
             }
         }
         userData.tokens = userData.tokens - shardsToPull;
+
         const mongoClient2 = await connectToDB();
         const collection2 = await connectToCollection('user_shard_data', mongoClient2);
         await collection2.updateOne(
@@ -227,13 +223,14 @@ const commandFile: ICommandInfo = {
                 if (err) {
                     console.log(err)
                     await message.channel.send(`╯︿╰ There seems to be an issue summoning your shards, this is logged and we are looking into it.`)
-                    await mongoClient.close();
+                    await mongoClient2.close();
                     return false;
                 }
-                else await mongoClient.close();
+                else await mongoClient2.close();
 
             });
         await mongoClient.close();
+        await mongoClient2.close();
         raresField.value = clipText(raresField.value.slice(0, raresField.value.length - 2))
         epicsField.value = clipText(epicsField.value.slice(0, epicsField.value.length - 2))
         legosField.value = clipText(legosField.value.slice(0, legosField.value.length - 2))
@@ -243,40 +240,51 @@ const commandFile: ICommandInfo = {
             legoAnimation = await message.channel.send('https://media.discordapp.net/attachments/558596438452600855/644460171937972227/legpull.gif')
         }
         if (champsPulled.length > 9) {
-            const tenPullImage = await createTenPullImage(champsPulled);
-            const id = uuidv1();
-            const imageFile: MessageAttachment = new MessageAttachment(Buffer.from(tenPullImage), `${id}.png`);
+            try {
+                const tenPullImage = await createTenPullImage(champsPulled);
+                const id = uuidv1();
+                const imageFile: MessageAttachment = new MessageAttachment(Buffer.from(tenPullImage), `${id}.png`);
 
-            embed = new MessageEmbed(
-                {
-                    image: {
-                        url: `attachment://${id}.png`
-                    },
-                    description: `Here is what you pulled from ${shardsToPull} ${shardType} shard(s):`
+                embed = new MessageEmbed(
+                    {
+                        image: {
+                            url: `attachment://${id}.png`
+                        },
+                        description: `Here is what you pulled from ${shardsToPull} ${shardType} shard(s):`
+                    }
+                )
+                if (rarityList.legendaries.length > 0) {
+                    embed.fields.push(legosField)
                 }
-            )
-            if (rarityList.legendaries.length > 0) {
-                embed.fields.push(legosField)
+                if (rarityList.epics.length > 0) {
+                    embed.fields.push(epicsField)
+                }
+                if (rarityList.rares.length > 0) {
+                    embed.fields.push(raresField)
+                }
+                setTimeout(async () => {
+                    if (legoAnimation) {
+                        await legoAnimation.delete();
+                    }
+                    await message.reply({
+                        files: [imageFile],
+                        allowedMentions: {
+                            repliedUser: false
+                        }, embeds: [embed]
+                    });
+                }, 1000)
+                return true;
             }
-            if (rarityList.epics.length > 0) {
-                embed.fields.push(epicsField)
-            }
-            if (rarityList.rares.length > 0) {
-                embed.fields.push(raresField)
-            }
-            setTimeout(async () => {
+            catch (err) {
                 if (legoAnimation) {
                     await legoAnimation.delete();
                 }
                 await message.reply({
-                    files: [imageFile],
                     allowedMentions: {
                         repliedUser: false
                     }, embeds: [embed]
                 });
-            }, 1000)
-            return true;
-
+            }
         }
         else {
             embed = new MessageEmbed(

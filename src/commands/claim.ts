@@ -91,6 +91,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     repliedUser: false
                 }, embeds: [claimed]
             });
+            await mongoClient.close();
             return true;
         }
     }
@@ -168,6 +169,5 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 await mongoClient.close();
             }
         });
-
     return true;
 }

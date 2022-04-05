@@ -3,6 +3,7 @@ import sharp from 'sharp';
 import Axios from 'axios'
 import path from "path";
 import { isFunction } from "util";
+import { logger } from "../arbi";
 
 
 export function champsByRarity(champions: IChampPull[]){
@@ -62,8 +63,9 @@ export async function createTenPullImage(champions: IChampPull[]): Promise<Buffe
             })
         }
         catch (e) {
-            console.log(`Axios error: \n${e}\nChampion ID: ${id}`)
+            logger.error(`Axios error: \n${e}\nChampion ID: ${id}`)
         }
+        
         pullImages.push(response.data)
     }
     const buffer = await sharp(path.join(__dirname, '/10pull.png'))

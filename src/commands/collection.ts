@@ -15,7 +15,8 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     try {
         const mongoClient = await connectToDB();
         const collection = await connectToCollection('user_shard_data', mongoClient);
-        let userData: IShardData = await collection.findOne<IShardData>({ userID: interaction.user.id })
+        let userData: IShardData = await collection.findOne<IShardData>({ userID: interaction.user.id });
+        await mongoClient.close()
         const embeds: MessageEmbed[] = [];
         let rareEmbed: MessageEmbed;
         let epicEmbed: MessageEmbed;
