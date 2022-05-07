@@ -1,0 +1,138 @@
+[    
+    {
+        "name": "Poison",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537545450610688/unknown.png",
+        "desc": "Damages the target Champion by 2,5 / 5% of their MAX HP at the beginning of their Turn. This damage is not affected by any other effects and only scales per Target’s MAX HP. Block Damage blocks it. If the Target Champion has a Shield, Poison damage will be applied to the Shield first.",
+        "type": "debuff"
+    },
+    {
+        "name": "Bomb",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537392958308402/unknown.png",
+        "desc": "When this debuff expires, the affected Champion suffers direct damage that ignores their DEF value. The damage inflicted by the bomb scales per the Stat indicated in the Skill description.",
+        "type": "debuff"
+    },
+    {
+        "name": "Decrease ATK",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537428370784276/unknown.png",
+        "desc": "Decreases the Champion’s Battle ATK by 25 / 50%.",
+        "type": "debuff"
+    },
+    {
+        "name": "Decrease DEF",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537447144501268/unknown.png",
+        "desc": "Decreases the Champion’s Battle DEF by 30 / 60%.",
+        "type": "debuff"
+    },
+    {
+        "name": "Decrease SPD",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537465867882576/unknown.png",
+        "desc": "Decreases the Champion’s Battle SPD by 15 / 30%."
+    },
+    {
+        "name": "Decrease ACC",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537413451673670/unknown.png",
+        "desc": "Reduces the Champion’s Battle ACC by 25 / 50%.",
+        "type": "debuff"
+    },
+    {
+        "name": "Decrease С. DMG",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960538707331514408/unknown.png",
+        "desc": "Decreases the current value of the Critical Damage by 15% / 25%.",
+        "type": "debuff"
+    },
+    {
+        "name": "Decrease C.RATE",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960538835681419315/unknown.png",
+        "desc": "Decreases the current value of the Critical Rate by 15% / 30%.",
+        "type": "debuff"
+    },
+    {
+        "name": "Stun",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537647221190746/unknown.png",
+        "desc": "The Champion with this debuff is unable to act X Turns. Cooldowns are not refreshed while Stun is active.",
+        "type": "debuff"
+    },
+    {
+        "name": "Freeze",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537479952343110/unknown.png",
+        "desc": "The Champion with this debuff is unable to act X Turns. Cooldowns are not refreshed while Freeze is active. The Champion only receives 75% of incoming damage.",
+        "type": "debuff"
+    },
+    {
+        "name": "Sleep",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537620553809950/unknown.png",
+        "desc": "The Champion with this debuff is unable to act X Turns. Cooldowns are not refreshed while Sleep is active. Continuous Heal and Poison Effect work as normal while the Champion is in Sleep, so do any Passive Skills that heal the Champion. This Debuff can be removed from the target by inflicting any kind of active damage (except the turn when the Sleep Debuff was placed).",
+        "type": "debuff"
+    },
+    {
+        "name": "Block Cooldown Skills",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537334867185764/unknown.png",
+        "desc": "When active, this Debuff prevents the Champion from using Active Skills other than their Default Skill. Skill Cooldown of the affected Champion refreshes as normal.",
+        "type": "debuff"
+    },
+    {
+        "name": "Provoke",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537602140799016/unknown.png",
+        "desc": "When this debuff is active, the Champion can only attack the enemy that applied it for X Turns, using their Default Skill.",
+        "type": "debuff"
+    },
+    {
+        "name": "Fear - True Fear",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960542924452528168/unknown.png",
+        "desc": "Fear: When a Champion with this Debuff attempts to use a Skill, there is a 50% chance that the Skill will not activate, and the Champion will lose their turn.\nTrue Fear: When a Champion with this Debuff attempts to use a Skill, there is a 50% chance that the Skill will not activate, and the Champion will lose the turn. The Skill that he or she tried to use goes on cooldown.",
+        "type": "debuff"
+    },
+    {
+        "name": "Heal Reduction",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537373828079626/unknown.png",
+        "desc": "Any healing received by the Champion with this debuff is reduced by 50 / 100%.",
+        "type": "debuff"
+    },
+    {
+        "name": "Block Revive",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960543487726600272/unknown.png",
+        "desc": "Blocks revive. Valid throughout the battle.",
+        "type": "debuff"
+    },
+    {
+        "name": "Block Buffs",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537291951050802/unknown.png",
+        "desc": "All buffs that are applied to the Champion with this debuff are automatically blocked and have no effect.",
+        "type": "debuff"
+    },
+    {
+        "name": "Weaken",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537666154274856/unknown.png",
+        "desc": "Increases damage received by the Target Champion by 15 / 25%.",
+        "type": "debuff"
+    },
+    {
+        "name": "Leech",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537521547268106/unknown.png",
+        "desc": "Any Champion that attacks a Champion with this debuff heals for 18% of inflicted damage.",
+        "type": "debuff"
+    },
+    {
+        "name": "HP Burn",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537497463574548/unknown.png",
+        "desc": "While the debuff is active and at the start of the affected Champion’s turn, they and all their allies take damage equal to 3% of their respective MAX HP. There can be only one HP Burn debuff active of a Champion at a time.",
+        "type": "debuff"
+    },
+    {
+        "name": "Poison Sensitivity I - II",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960539049205063780/unknown.png",
+        "desc": "This debuff increases the damage taken from the Poison debuff by the recipient. It increases the damage taken by 25 or 50%.",
+        "type": "debuff"
+    },
+    {
+        "name": "Hex",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960537792692224050/unknown.png",
+        "desc": "Hex debuff can change the way the abilities of a specific champion work. For example, enemies under Hex debuff may receive higher damage if it's indicated in the ability description of the attacker. By itself, Hex has no effect and works as a marker.",
+        "type": "debuff"
+    },{
+        "name": "Decrease RES",
+        "image": "https://cdn.discordapp.com/attachments/960536857366655027/960542370561134712/unknown.png",
+        "desc": "Decreases the Champion's Battle RES by 25 / 50 %.",
+        "type": "debuff"
+    }
+]

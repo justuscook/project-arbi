@@ -1,11 +1,10 @@
-import { SlashCommandBuilder, bold, userMention } from '@discordjs/builders';
-import { time } from 'console';
-import exp from 'constants';
-import { ApplicationCommandPermissionData, BufferResolvable, ButtonInteraction, CommandInteraction, DiscordAPIError, GuildChannel, GuildMember, GuildMemberRoleManager, Interaction, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, MessageSelectMenu, MessageSelectMenuOptions, TextChannel, User } from 'discord.js';
-import { EmbedColor, IMessageEmbeds } from '../general/util'
+import { SlashCommandBuilder, bold, userMention, Embed, codeBlock } from '@discordjs/builders';
+import { CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbed, MessageEmbedImage, User } from 'discord.js';
+import { IMessageEmbeds } from '../general/util'
 import * as util from '../general/util';
-import google, { GoogleApis } from 'googleapis';
-import { rawListeners } from 'process';
+import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches } from '../arbi';
+
+export const registerforTesting = false;
 
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('guide')
@@ -13,220 +12,281 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
         .setName('input')
         .setDescription('Enter a champions name or game location.  Can also be \'show\' and @mentions.')
         .setRequired(true))
-    .addBooleanOption(option => option
-        .setDescription('Wether to show the command in the channel or not.')
-        .setName('show_in_server')
-        .setRequired(false)
-    )
-    .addUserOption(option => option
-        .setName('user_to_dm')
-        .setRequired(false)
-        .setDescription('Only for Raid: SL offical server mods, DM\'s guides to users')
-    )
+    /*
+.addBooleanOption(option => option
+    .setDescription('Whether to show the command in the channel or not.')
+    .setName('show_in_server')
+    .setRequired(false)
+)
+.addUserOption(option => option
+    .setName('user_to_dm')
+    .setRequired(false)
+    .setDescription('Only for Raid: SL offical server mods, DM\'s guides to users')
+)
+*/
     .setDescription('Search for guides by champion or dungeon name.')
 
-export async function execute(interaction) {
+export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
+    /*
+    const commandText = await interaction.toString();
+    const commandTextEmbed = new MessageEmbed()
+        .setAuthor({ name: commandText })
+        .setDescription('Processing your command now!');
+    const commandTextMessage = await interaction.followUp({ embeds: [commandTextEmbed] });
+    */
     let row1: MessageActionRow = new MessageActionRow;
     let row2: MessageActionRow = new MessageActionRow;
     const embeds: IMessageEmbeds[] = [];
     let userToDM: User = interaction.options.getUser('user_to_dm');
     const originalUser: User = interaction.user;
-    let canShowInServerOrDM = await util.canShowInServerOrDM(interaction);
-    let input = interaction.options.getString('input');
+    let canDM = await util.canDM(interaction);
+    let canShow = await util.canShow(interaction);
+    let input: string = interaction.options.getString('input');
+    let ogInput = input;
     let showInServer = interaction.options.getBoolean('show_in_server');
-
+    if (input === null) input = 'list';
+    if (input.toLowerCase().includes('show')) {
+        input = util.removeShow(input).trimEnd().trimStart();
+        showInServer = true;
+    }//const regexCheck = /<@(!|)userID>/gim;
+    //if (regexCheck.exec(x) !== null) {}
+    if (input.includes('<@')) {
+        input = input.replace(/!/g, '');
+        const data = input.match(new RegExp("(.+) <@([^>]+)"));
+        const userID = data[2];
+        userToDM = await interaction.client.users.fetch(userID);
+        input = data[1];
+    }
+    //console.log(input);
     try {
-        if (interaction.isCommand()) {
-            if (input.toLowerCase().includes('show')) {
-                input = util.removeShow(input);
-                showInServer = true;
-            }
-            if (input.includes('<@!')) {
-                let userID = input.substr(input.indexOf('<@!') + 3, 18)
-                userToDM = await interaction.client.users.fetch(userID);
-                input = input.replace(`<@!${userID}>`, '');
-            }
+        const inbox = new MessageActionRow()
+            .addComponents(
+                new MessageButton()
+                    .setLabel('Inbox')
+                    .setStyle('LINK')
+                    .setURL(`https://discord.com/channels/@me/${await (await interaction.user.createDM()).id}`)
+            );
+        const mongoClient = await util.connectToDB();
+        const collection = await util.connectToCollection('guides', mongoClient);
+        const guides = await collection.find<util.IGuide>({}).toArray();
+        await mongoClient.close();
+        const phrases = ['early game', 'mid game', 'late game', 'late', 'mid', 'early', 'late game+', 'late game +', 'late game guide', 'late game+ guide'];
+        let found: util.IGuide[];
 
-            const response: google.Common.GaxiosResponse = await util.getSpreadSheetValues({
-                spreadsheetId: util.guidesSheetID,
-                auth: await util.getAuthToken(),
-                sheetName: 'Form Responses 1',
-            });
-            const response2: google.Common.GaxiosResponse = await util.getSpreadSheetValues({
-                spreadsheetId: util.guidesSheetID,
-                auth: await util.getAuthToken(),
-                sheetName: 'Form Responses 2',
-            });
-            let guides: util.IGuide[] = [];
-            response.data.values.map((x) => {
-                guides.push({
-                    aprroved: x[0],
-                    title: x[2],
-                    champion: x[3],
-                    stage: x[4],
-                    rarity: x[5],
-                    topSlide: x[6],
-                    topImage: (x[7] !== '') ? x[7] : x[14],
-                    midSlide: x[8],
-                    midImage: (x[9] !== '') ? x[9] : x[15],
-                    botSlide: x[10],
-                    botImage: (x[11] !== '') ? x[11] : x[16]
-                })
-            });
-            response2.data.values.map((x) => {
-                guides.push({
-                    aprroved: x[0],
-                    title: x[2],
-                    champion: x[3],
-                    stage: x[4],
-                    rarity: x[5],
-                    topSlide: x[6],
-                    topImage: (x[7] !== '') ? x[7] : x[14],
-                    midSlide: x[8],
-                    midImage: (x[9] !== '') ? x[9] : x[15],
-                    botSlide: x[10],
-                    botImage: (x[11] !== '') ? x[11] : x[16]
-                })
-            });
-            guides = guides.filter(x => x.aprroved === 'TRUE');
+        if ((input.toLowerCase().includes('list') || input === '') && !input.toLowerCase().includes('diabolist')) {
+            const listStings = util.getGuideList(guides);
+            const genGuidesEmbed = new MessageEmbed()
+                .setTitle('List of general game guides by title:')
+                .setDescription(codeBlock(listStings[2]))
+                .setColor('GOLD');
 
-            const found: util.IGuide[] = util.fuzzySearch(guides, input, ['champion']);
-            if (found.length === 0) {
-                await interaction.followUp(`There are no guides for ${bold(input)} yet!`);
-                return;
+            const champEmbed1 = new MessageEmbed()
+                .setTitle('List of all champion guides:')
+                .setDescription(codeBlock(listStings[0]))
+                .setColor('GOLD');
+            const champEmbed2 = new MessageEmbed()
+                .setTitle('List of champion guides continued:')
+                .setDescription(codeBlock(listStings[1]))
+                .setColor('GOLD');
+            if (canShow && showInServer) {
+                const listMessage = await interaction.followUp({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
+                await util.delayDeleteMessages([listMessage as Message]);
+                return true;
             }
-            for (const f of found) {
-                const topImage = await util.getMessageAttacment(f.topImage);
-                const topEmbed = new MessageEmbed()
-                    .setDescription(f.topSlide)
-                    .setTitle(f.title)
-                    .setImage(`attachment://${topImage.name}`);
-                const midImage = await util.getMessageAttacment(f.midImage);
-                const midEmbed = new MessageEmbed()
-                    .setDescription(f.midSlide)
-                    .setTitle(f.title)
-                    .setImage(`attachment://${midImage.name}`);
-                let botEmbed = new MessageEmbed();
-                let botImage;
-                if (f.botImage !== null) {
-                    botImage = await util.getMessageAttacment(f.botImage);
-                    botEmbed = new MessageEmbed()
-                        .setDescription(f.botSlide)
-                        .setTitle(f.title)
-                        .setImage(`attachment://${botImage.name}`)
-                        .setFooter(`Page ${found.indexOf(f) + 1}`);
-                }
-                else {
-                    botEmbed = new MessageEmbed()
-                        .setDescription(f.botSlide)
-                        .setTitle(f.title)
-                        .setFooter(`Page ${found.indexOf(f) + 1}`);
-                }
-                embeds.push({
-                    topEmbed: topEmbed,
-                    topImage: topImage,
-                    midEmbed: midEmbed,
-                    midImage: midImage,
-                    botEmbed: botEmbed,
-                    botImage: (botImage) ? botImage : ''
-                })
+            else {
+                const dmEmbed = new MessageEmbed()
+                    .setDescription(`${interaction.user.toString()}${(showInServer) ? `You can\'t show commands in this server.` : ''} Guide(s) sent, check your "Inbox"!`)
+                    .setAuthor({ name: `/${interaction.commandName} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}` })
+
+                const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
+                const listMessage = await interaction.user.send({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
+
+
             }
-            const inbox = new MessageActionRow()
-                .addComponents(
-                    new MessageButton()
-                        .setLabel('Inbox')
-                        .setStyle('LINK')
-                        .setURL(`https://discord.com/channels/@me/${await (await interaction.user.createDM()).id}`)
-                );
-            const first10orLess = found.filter(x => found.indexOf(x) < 10)
-            for (let a = 1; a <= ((first10orLess.length > 5) ? 5 : first10orLess.length); a++) {
-                row1.addComponents(
+            return true;
+        }
+        if (phrases.includes(input)) {
+            found = util.fuzzySearch(guides, input, ['tag']);
+        }
+        else {
+            found = util.fuzzySearch(guides, input, ['tag', 'title']);
+        }
+        if (found.length === 0) {
+            await interaction.followUp(`There are no guides for ${bold(input)} yet!`);
+            AddToFailedGuideSearches(input);
+            return true;
+        }
+        else {
+            AddToSuccessfulGuideSearches(input);
+        }
+        const first10orLess: util.IGuide[] = found.filter(x => found.indexOf(x) < 10)
+
+        const blackSlideEmbed: MessageEmbed = new MessageEmbed()
+            .setTitle('Blank slide')
+            .setDescription('This is a short guide, nothing in this section!');
+        const botblackSlideEmbed: MessageEmbed = new MessageEmbed()
+            .setTitle('Blank slide')
+            .setDescription('This is a short guide, nothing in this section!');
+        const guideEmbeds: IMessageEmbeds[] = [];
+        first10orLess.sort(util.SortByOrder('order'));
+        for (const f of first10orLess) {
+            const embeds: MessageEmbed[] = [];
+            for (const d of f.data) {
+                const embed = new MessageEmbed();
+                const image: MessageEmbedImage = {
+                    url: d.image,
+                }
+                if (d.image !== undefined) embed.image = image;
+                embed.title = d.label;
+                embed.description = d.desc;
+
+                embeds.push(embed)
+            }
+            let authors: User[];
+            try {
+                authors = await util.GetAuthor(interaction.client, f.author);
+            }
+            catch (err) {
+                embeds.pop();
+                //authors = [await interaction.client.users.fetch('888450658397741057')]
+                break;
+            }
+            let authorsNames: string = '';
+            for (const a of authors) {
+                authorsNames += `${a.username}#${a.discriminator} `;
+            }
+            embeds[0].setAuthor({
+                name: authorsNames,
+                iconURL: (authors.length > 1) ? 'https://cdn.discordapp.com/attachments/737622176995344485/892856095624810536/Share-damage-2.png' : authors[0].avatarURL()
+            }
+            );
+            embeds[0].setTitle(f.title);
+            if (embeds[1]) {
+                embeds[1].setTitle(f.title);
+            }
+            if (!embeds[2]) {
+                embeds[2] = botblackSlideEmbed;
+            }
+            embeds[2].footer = {
+                text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`
+            }
+            guideEmbeds.push({
+                topEmbed: embeds[0],
+                midEmbed: (embeds[1]) ? embeds[1] : blackSlideEmbed,
+                botEmbed: embeds[2]
+            })
+        }
+        //console.log(guideEmbeds);
+
+        for (let a = 1; a <= ((first10orLess.length > 5) ? 5 : first10orLess.length); a++) {
+            row1.addComponents(
+                new MessageButton()
+                    .setCustomId(a.toString())
+                    .setLabel(a.toString())
+                    .setStyle('SUCCESS')
+            )
+        };
+        (row1.components[0] as MessageButton).setStyle('PRIMARY')
+
+        if (first10orLess.length > 5) {
+            for (let a = 6; a <= first10orLess.length; a++) {
+                row2.addComponents(
                     new MessageButton()
                         .setCustomId(a.toString())
                         .setLabel(a.toString())
                         .setStyle('SUCCESS')
                 )
             };
+            if (userToDM !== null && canDM) {
+                const topCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].topEmbed] });
+                const midCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].midEmbed] });
+                const botCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
+                //interaction.user.id = userToDM.id;
+                //interaction.channel.id = await (await userToDM.createDM()).id;
+                const guideSend = await interaction.followUp({ content: `I am sending the guide(s) to ${userToDM.toString()}\'s DM\'s!` });
 
-            if (first10orLess.length > 5) {
-                for (let a = 6; a <= first10orLess.length; a++) {
-                    row2.addComponents(
-                        new MessageButton()
-                            .setCustomId(a.toString())
-                            .setLabel(a.toString())
-                            .setStyle('SUCCESS')
-                    )
-                };
-                if (userToDM !== null && canShowInServerOrDM) {
-                    const commandMessage = await userToDM.send({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1, row2] });
-                    interaction.user.id = userToDM.id;
-                    interaction.channel.id = await (await userToDM.createDM()).id
-                    await util.buttonPagination(userToDM.id, commandMessage as Message, embeds);
-                    const guidesDMed = await interaction.followUp(`I am sending the guide(s) to ${userMention(userToDM.id)}\'s DM\'s!`)
-                    util.delayDeteleMessage(guidesDMed);
-                    return;
-                }
-                else if (canShowInServerOrDM && showInServer === true) {
-                    const commandMessage = await interaction.followUp({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1, row2] });
-                    await util.buttonPagination(interaction.user.id, commandMessage as Message, embeds);
-                    util.delayDeteleMessage(commandMessage)
-                    return;
-                }
-                else {
-                    if (userToDM !== null) {
-                        const cantDM = await interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
-                        util.delayDeteleMessage(cantDM);
-                        return;
-                    }
-                    const dmAlert = await interaction.followUp({ content: `${userMention(interaction.user.id)}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`, components: [inbox] });
-                    const commandMessage = await interaction.user.send({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1, row2] });
-                    await util.buttonPagination(interaction.user.id, commandMessage as Message, embeds);
-                    util.delayDeteleMessage(commandMessage)
-                    util.delayDeteleMessage(dmAlert, 15 * 1000)
-                    return;
-                }
+                await util.guideButtonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
+                return true;
+            }
+            else if (canShow && showInServer === true) {
+                const topCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].topEmbed] });
+                const midCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].midEmbed] });
+                const botCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
+                await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                return true;
             }
             else {
-                if (userToDM !== null && canShowInServerOrDM) {
-                    const commandMessage = await userToDM.send({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1] });
-                    interaction.user.id = userToDM.id;
-                    interaction.channel.id = await (await userToDM.createDM()).id
-                    await util.buttonPagination(userToDM.id, commandMessage as Message, embeds);
-                    const guidesDMed = await interaction.followUp({ content: util.simpleEmbed(`I am sending the guide(s) to ${userMention(userToDM.id)}\'s DM\'s!`) })
-                    util.delayDeteleMessage(guidesDMed, 15 * 1000);
-                    return;
+                if (userToDM !== null) {
+                    await interaction.followUp(`${interaction.user.toString()}, you can't send DM's, only mod in the offical Raid: SL server can.`)
+                    return true;
                 }
-                else if (canShowInServerOrDM && showInServer === true) {
-                    const commandMessage = await interaction.followUp({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1] });
-                    await util.buttonPagination(interaction.user.id, commandMessage as Message, embeds);
-                    util.delayDeteleMessage(commandMessage)
-                    return;
+                const topCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].topEmbed] });
+                const midCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].midEmbed] });
+                const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
+                const dmEmbed = new MessageEmbed()
+                    .setDescription(`${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`)
+
+
+                const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
+
+                await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
+                return true;
+
+            }
+        }
+        else {
+            if (userToDM !== null && canDM) {
+                const topCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].topEmbed] });
+                const midCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].midEmbed] });
+                const botCommandMessage = await userToDM.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
+                //interaction.user.id = userToDM.id;
+                //interaction.channel.id = await (await userToDM.createDM()).id;
+                const guideSend = await interaction.followUp({ content: `I am sending the guide(s) to ${userToDM.toString()}\'s DM\'s!` })
+
+                await util.guideButtonPagination(userToDM.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([guideSend as Message], 60 * 1000);
+                return true;
+            }
+            else if (canShow && showInServer === true) {
+                const topCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].topEmbed] });
+                const midCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].midEmbed] });
+                const botCommandMessage = await interaction.followUp({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
+                await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+
+                return true;
+            }
+            else {
+                if (userToDM !== null) {
+                    await interaction.followUp(`${interaction.user.toString()}, you can't send DM's, only mod in the offical Raid: SL server can.`)
+                    return true;
                 }
-                else {
-                    if (userToDM !== null) {
-                        const cantDM = await interaction.followUp(`${userMention(interaction.user.id)}, you can't send DM's, only mod in the offical Raid: SL server can.`)
-                        util.delayDeteleMessage(cantDM);
-                        return;
-                    }
-                    const dmAlert = await interaction.followUp({ content: `${userMention(interaction.user.id)}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`, components: [inbox] });
-                    const commandMessage = await interaction.user.send({ embeds: [embeds[0].topEmbed, embeds[0].midEmbed, embeds[0].botEmbed], files: [embeds[0].topImage, embeds[0].midImage, embeds[0].botImage], components: [row1] });
-                    await util.buttonPagination(interaction.user.id, commandMessage as Message, embeds);
-                    util.delayDeteleMessage(commandMessage);
-                    util.delayDeteleMessage(dmAlert, 15 * 1000);
-                    return;
-                }
+                const topCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].topEmbed] });
+                const midCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].midEmbed] });
+                const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
+                const dmEmbed = new MessageEmbed()
+                    .setDescription(`${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''}  Guide(s) sent, check your "Inbox"!`)
+                    .setAuthor({ name: `/${interaction.commandName} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}` })
+
+                const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
+
+
+                await util.guideButtonPagination(interaction.user.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
+                await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
+                return true;
+
+
             }
         }
     }
-    catch (error) {
-        console.log(error)
-        if (error.code === 50007) {
-            await interaction.followUp({ content: `${userMention(originalUser.id)}, ${userMention(userToDM.id)} Has direct messages disabled.  They can either turn them on just for this server or globlally.  Find out how [here](https://support.discord.com/hc/en-us/articles/217916488-Blocking-Privacy-Settings-).` });
-            return;
-        } else {
-            await interaction.followUp({ content: 'There was an issue with the command, it has been logged and we are working on a fix!' })
-            return;
-        }
+    catch (err) {
+        console.log(err);
+        interaction.followUp('There was an error in your guide search, it is logged and we are looking into it!  Please use /support and ask for help with your issue if it keeps happening.');
+        return false;
     }
 }
+
+export const usage = `/guide input: arbiter`;

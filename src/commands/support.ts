@@ -5,15 +5,15 @@ import { logger } from '../arbi';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
-    .setName('invite')
+    .setName('support')
     .setDefaultPermission(true)
-    .setDescription('Invite Arbie to help you lookup Raid:SL character info and much more!');
+    .setDescription('Join the support server to get help or just chat with us');
 export async function execute(interaction: CommandInteraction) : Promise<boolean>{
     await interaction.deferReply();
     try {
         const embed: MessageEmbed = new MessageEmbed({
             color: 'GOLD',
-            description: `You don\'t have ${interaction.client.application.name} on your other servers yet?\nWhat are you waiting for [click here NOW](https://discord.com/api/oauth2/authorize?client_id=888450658397741057&permissions=534723946560&scope=applications.commands%20bot)`
+            description: `If you need help with ${interaction.client.application.name} or just want to chat [join our support server](https://discord.gg/c5cz9P784j)`
         })
         await interaction.followUp({ embeds: [embed] });
         return true;
@@ -25,8 +25,8 @@ export async function execute(interaction: CommandInteraction) : Promise<boolean
     }
 }
 
+export const usage = `/support`;
 
-export const usage = `/invite`;
 
 
 
