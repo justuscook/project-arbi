@@ -13,13 +13,14 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
         .setDescription('Enter the name of the buff/debuff you would liek to search for.')
         .setRequired(true))
     .setDefaultPermission(true)    
-    .setDescription('Search for a given buff/debuff definiation from the in game FAQ.');
+    .setDescription('Search for a given buff/debuff definition from the in game FAQ.');
 export async function execute(interaction: CommandInteraction) : Promise<boolean>{
     await interaction.deferReply();
     try {
         const mongoClient = await connectToDB();
         const collection = await connectToCollection('buffs_debuffs', mongoClient);
         const buffs = await collection.find<IBuffDebuff>({}).toArray();
+        await mongoClient.close()
         const searchText = interaction.options.getString('input');
         const embed: MessageEmbed = new MessageEmbed();
         const found: IBuffDebuff[] = fuzzySearch(buffs,searchText,['name']);
@@ -39,10 +40,13 @@ export async function execute(interaction: CommandInteraction) : Promise<boolean
         return true;
     }
     catch (err) {
+        console.log(err)
         logger.error(err)
         return false;
     }
 }
+
+export const usage = `/buff increae atk`;
 
 
 

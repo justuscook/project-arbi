@@ -57,7 +57,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     },
                     {
                         name: `Epics: ${(userData.champions.epic.length > 0) ? getTotalChampsByRarity(userData.champions.epic) : ''}`,
-                        value: (userData.champions.rare.length > 0) ? getCollectionText(userData.champions.epic) : `You don't have any rares?  You only summons sacred don't you...`
+                        value: (userData.champions.rare.length > 0) ? getCollectionText(userData.champions.epic) : `You don't have any epics?  Have you tried a sacred shard lol...`
                     }
                 ],
                 color: 'PURPLE',
@@ -76,7 +76,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     },
                     {
                         name: `Legendaries:  ${(userData.champions.legendary.length > 0) ? getTotalChampsByRarity(userData.champions.legendary) : ''}`,
-                        value: (userData.champions.rare.length > 0) ? getCollectionText(userData.champions.legendary) : `You don't have any rares?  You only summons sacred don't you...`
+                        value: (userData.champions.rare.length > 0) ? getCollectionText(userData.champions.legendary) : `You don't have any legos?  Try /summon sacred 100...`
                     }
                 ],
                 color: 'GOLD',
@@ -190,3 +190,4 @@ function getTotalChampsByRarity(champs: Champion[]): number {
     }
 }
 
+export const usage = '/collection'

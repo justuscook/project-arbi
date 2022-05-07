@@ -7,7 +7,7 @@ import { clipText, connectToCollection, connectToDB, fuzzySearch, getInput, ICom
 
 const commandFile: ICommandInfo = {
     name: 'leaderboard',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         const mongoClient = await connectToDB();
         const collection = await connectToCollection('guides', mongoClient);
         const guides = await collection.find<IGuide>({}).toArray();

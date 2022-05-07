@@ -4,7 +4,7 @@ import { connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, 
 
 const commandFile: ICommandInfo = {
     name: 'reboot',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         await message.reply('Rebooting, this shouldn\'t take long 😴...🌄');
         process.exit();        
     },

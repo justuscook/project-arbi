@@ -97,7 +97,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             else {
                 const dmEmbed = new MessageEmbed()
                     .setDescription(`${interaction.user.toString()}${(showInServer) ? `You can\'t show commands in this server.` : ''} Guide(s) sent, check your "Inbox"!`)
-                    .setAuthor({ name: `/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}` })
+                    .setAuthor({ name: `/${interaction.commandName} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}` })
 
                 const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
                 const listMessage = await interaction.user.send({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
@@ -269,7 +269,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
                 const dmEmbed = new MessageEmbed()
                     .setDescription(`${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''}  Guide(s) sent, check your "Inbox"!`)
-                    .setAuthor({ name: `/${interaction.command.name} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}` })
+                    .setAuthor({ name: `/${interaction.commandName} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}` })
 
                 const dmAlert = await interaction.followUp({ embeds: [dmEmbed], components: [inbox] });
 
@@ -283,8 +283,10 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         }
     }
     catch (err) {
+        console.log(err);
         interaction.followUp('There was an error in your guide search, it is logged and we are looking into it!  Please use /support and ask for help with your issue if it keeps happening.');
-
+        return false;
     }
 }
 
+export const usage = `/guide input: arbiter`;

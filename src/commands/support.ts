@@ -19,12 +19,13 @@ export async function execute(interaction: CommandInteraction) : Promise<boolean
         return true;
     }
     catch(err){
+        console.log(err)
         logger.error(err)
         return false;
     }
 }
 
-
+export const usage = `/support`;
 
 
 

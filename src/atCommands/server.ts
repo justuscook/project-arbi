@@ -6,7 +6,7 @@ import {JSDOM} from 'jsdom';
 
 const commandFile: ICommandInfo = {
     name: 'server',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         const response = await axios({
             url: "https://raid-support.zendesk.com/api/v2/help_center/en-us/articles/360017253919.json",
             responseType: 'json'

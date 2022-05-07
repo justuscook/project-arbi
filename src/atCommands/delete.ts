@@ -4,7 +4,7 @@ import { connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, 
 
 const commandFile: ICommandInfo = {
     name: 'delete',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         const search = getInput(message.content);
         const mongoClient = await connectToDB();
         const collection = await connectToCollection('guides', mongoClient);

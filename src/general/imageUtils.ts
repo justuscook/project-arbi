@@ -57,13 +57,14 @@ export async function createTenPullImage(champions: IChampPull[]): Promise<Buffe
         let response;
         try {
             response = await Axios({
-                url: `https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/newAvatars/${id}.png`,
+                url: `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${id}.png`,
                 responseType: 'arraybuffer',
                 method: 'GET'
             })
         }
         catch (e) {
-            logger.error(`Axios error: \n${e}\nChampion ID: ${id}`)
+            console.log(`Champion ID: ${id}\nAxios error: \n${e} Response:${response}`)
+            logger.error(`Champion ID: ${id}\nAxios error: \n${e} Response:${response}`)
         }
         
         pullImages.push(response.data)

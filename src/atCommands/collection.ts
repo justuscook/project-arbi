@@ -6,7 +6,7 @@ import { clipText, connectToCollection, connectToDB, fuzzySearch, getInput, ICom
 
 const commandFile: ICommandInfo = {
     name: 'collection',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         try {
             const mongoClient = await connectToDB();
             const collection = await connectToCollection('user_shard_data', mongoClient);

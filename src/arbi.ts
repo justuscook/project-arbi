@@ -1,9 +1,9 @@
-import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, Intents, ApplicationCommandResolvable, Util, TextChannel, User, Message, Interaction, MessageEmbed, GuildChannel } from 'discord.js';
+import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, Intents, ApplicationCommandResolvable, Util, TextChannel, User, Message, Interaction, MessageEmbed, GuildChannel, Role } from 'discord.js';
 import fs from 'fs';
-import express, { Response, Request } from 'express';
+import express, { Response, Request, response } from 'express';
 import { clientId, testClientId, guildIDs, token, testToken } from './config.json';
 import { connectToCollection, connectToDB, Data, getAuthToken, getLeaderboard, getSpreadSheetValues, getTop, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
-import { auth } from 'google-auth-library';
+import './ws-polyfill.js'
 import { uploadImage } from './general/util';
 import { userMention } from '@discordjs/builders';
 import https from 'https';
@@ -13,25 +13,18 @@ import * as promClient from 'prom-client';
 import cors from 'cors';
 import axios from 'axios';
 import { IShardData } from './general/IShardData';
+import { get } from 'mongoose';
+
+/*
+const api = useRaidToolkitApi(IAccountApi);
+const account = (await api.getAccounts())[0];
+let accountDump = await api.getAccountDump(account.id);*/
 
 
 
-let TOKEN = token;//change before pushing live!
+let TOKEN = token;
 let CLIENTID = clientId;
-
 let ip = '';
- axios({
-    url: 'https://api.ipify.org?format=json',
-    method: 'GET',
-    responseType: 'json',
-}).then(response => {
-    ip = response.data.ip
-})
- 
-if(ip !== '144.172.71.45'){
-    TOKEN = testToken;
-    CLIENTID = testClientId
-}
 
 
 export let leaderboard: Map<string, number>;
@@ -241,10 +234,8 @@ client.once('ready', async () => {
     bot_guilds_total.set(num.size);
     leaderboard = await getLeaderboard();
     topText = await getTop();
-    console.log(topText)
     setInterval(async () => {
         topText = await getTop();
-        console.log(topText)
         leaderboard = await getLeaderboard();
     }, 900000);
     /*
@@ -260,12 +251,19 @@ client.once('ready', async () => {
 
 
 client.on('messageCreate', async (message: Message) => {
+    if(message.author.bot) return;
 
-    if (!message.mentions.has(client.user.id)) return;
     if (message.content.includes("@here") || message.content.includes("@everyone")) return;
+    let botRole: Role;
+    if (message.inGuild()) {
+        botRole = message.guild.roles.botRoleFor(client.user.id)
+        if (!message.mentions.roles.has(botRole.id) && !message.mentions.has(client.user.id)) return;
+    }   
 
-    const commandName = message.content.split(' ')[1];
+    const commandName = message.content.toLowerCase().split(' ')[1];
+    const input = message.content.split(' ').slice(2).join(' ');
     const command = client.atCommands.get(commandName)
+    console.log(client.atCommands)
     if (!command) return;
     if (command.restricted) {
         if (!superUsers.includes(message.author.id)) {
@@ -273,20 +271,21 @@ client.on('messageCreate', async (message: Message) => {
         }
     }
     try {
-        const commandSuccess: Promise<boolean> = await command.execute(message);
+        const commandSuccess: Promise<boolean> = await command.execute(message, input);
         AddCommandToTotalCommands(commandName)
-        if (commandSuccess) {
-            console.log(commandName)
+        if (commandSuccess === undefined || commandSuccess) {
             AddCommandToTotalSuccessfulCommands(commandName);
         }
         else {
             AddCommandToTotalFailedCommands(commandName);
+            const errorChan: TextChannel = await client.channels.fetch('958715861743579187');
+            await errorChan.send(`${await client.users.fetch('269643701888745474')}Error in ${commandName} check the bot logs!`);
         }
     } catch (error) {
         logger.error(error);
-        const errorChan: TextChannel = await client.channel.fetch('958715861743579187');
-        await errorChan.send(`${await client.user.fetch('269643701888745474')}Error in ${command.data.name}: \n${error}`);
-        return message.reply({ content: 'There was an error while executing this command!' });
+        console.log(`$Error in {commandName}:\n${error}`)
+        const errorChan: TextChannel = await client.channels.fetch('958715861743579187');
+        await errorChan.send(`${await client.users.fetch('269643701888745474')}Error in ${commandName}: \n${error}`);
     }
 
 })
@@ -302,23 +301,43 @@ client.on('interactionCreate', async interaction => {
     if (!command) return;
 
     try {
+
         const commandSuccess: Promise<boolean> = await command.execute(interaction);
         AddCommandToTotalCommands(command.data.name)
-        if (commandSuccess) {
+        if (commandSuccess === undefined || commandSuccess) {
             AddCommandToTotalSuccessfulCommands(command.data.name);
         }
         else {
             AddCommandToTotalFailedCommands(command.data.name);
+            const errorChan: TextChannel = await client.channels.fetch('958715861743579187');
+            await errorChan.send(`${await client.user.fetch('269643701888745474')}Error in ${command.data.name} check the bot logs!`);
         }
     } catch (error) {
         logger.error(error);
-        const errorChan: TextChannel = await client.channel.fetch('958715861743579187');
+        console.log(error)
+        const errorChan: TextChannel = await client.channels.fetch('958715861743579187');
         await errorChan.send(`${await client.user.fetch('269643701888745474')}Error in ${command.data.name}: \n${error}`);
         return interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
     }
 });
+function connectBot() {
+    axios({
+        url: 'https://api.ipify.org?format=json',
+        method: 'GET',
+        responseType: 'json',
+    }).then((res) => {
+        ip = res.data.ip
+        if (ip !== '144.172.71.45') {
+            TOKEN = testToken;
+            CLIENTID = testClientId;
+        }
 
-client.login(TOKEN);
+        client.login(TOKEN);
+    })
+
+}
+
+connectBot();
 
 const register = new promClient.Registry();
 
@@ -394,7 +413,7 @@ async function deployCommands() {
 
     for (const file of commandFiles) {
         const command = require(__dirname + `/commands/${file}`);
-        if(ip !== '144.172.71.45')command.registerforTesting = true;
+        //if (ip !== '144.172.71.45') command.registerforTesting = true;
         if (command.registerforTesting === true) {
             commands.push(command.data.toJSON());
         }
@@ -441,7 +460,8 @@ async function deployCommands() {
                 const responseGlobal = await rest.put(
                     Routes.applicationCommands(CLIENTID),
                     { body: globalCommands },
-                );            }
+                );
+            }
             console.log(`Successfully registered application commands globally!`);
             for (const g of guildIDs) {
                 const response = await rest.put(

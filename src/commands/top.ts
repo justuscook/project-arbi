@@ -65,4 +65,4 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     }
 }
 
-
+export const usage = `/top`;

@@ -5,7 +5,7 @@ import { connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, 
 
 const commandFile: ICommandInfo = {
     name: 'claim',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         const mongoClient = await connectToDB();
         const collection = await connectToCollection('user_shard_data', mongoClient);
         let userData: IShardData = await collection.findOne<IShardData>({ userID: message.author.id })

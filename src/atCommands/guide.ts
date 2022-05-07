@@ -7,7 +7,7 @@ import { content } from "googleapis/build/src/apis/content";
 
 const commandFile: ICommandInfo = {
     name: 'guide',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         let row1: MessageActionRow = new MessageActionRow;
         let row2: MessageActionRow = new MessageActionRow;
         let showInServer = false;
@@ -16,7 +16,7 @@ const commandFile: ICommandInfo = {
         const originalUser: User = message.author;
         let canDM = await util.canDM(message);
         let canShow = await util.canShow(message);
-        let input = util.getUserInput(message.content);
+        //let input = util.getUserInput(message.content);
         let ogInput = message.content;
         if (input === null) input = 'list';
         if (input.toLowerCase().includes('show')) {

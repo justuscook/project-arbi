@@ -116,7 +116,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 repliedUser: false
             }, embeds: [notEnough]
         })
-        return false;
+        return true;
     }
     collection = await connectToCollection('shard_data', mongoClient);
     const champPool = await collection.findOne<IChampionPool>({});
@@ -303,10 +303,12 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         if (legoAnimation) {
             await legoAnimation.delete();
         }
-        await interaction.followUp({
+        const errorEmbed = new MessageEmbed();
+        errorEmbed.description = `An error Has occured, we have logged it and are looking into it.\n ${err}`;
+                await interaction.followUp({
             allowedMentions: {
                 repliedUser: false
-            }, embeds: [embed]
+            }, embeds: [errorEmbed]
         });
     }
 
@@ -475,7 +477,7 @@ interface IChampionPool {
     }
 }
 
-
+export const usage = `/summon input: sacred 100`;
 
 
 

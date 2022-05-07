@@ -5,13 +5,13 @@ import { canDM, canShow, connectToCollection, connectToDB, delayDeleteMessages, 
 
 const commandFile: ICommandInfo = {
     name: 'skills',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         try {
             let showInServer = false;
             let row1: MessageActionRow = new MessageActionRow;
             let allowDM = await canDM(message);
             let allowShow = await canShow(message);
-            let champName = getUserInput(message.content)
+            let champName = input;
             if (champName.toLowerCase().includes('show')) {
                 showInServer = true,
                     champName = removeShow(champName);
@@ -106,6 +106,7 @@ const commandFile: ICommandInfo = {
             return true;
         }
         catch (err) {
+            console.log(err)
             logger.error(err);
             return false;
         }

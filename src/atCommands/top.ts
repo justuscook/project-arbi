@@ -6,7 +6,7 @@ import { topText } from '../arbi'
 
 const commandFile: ICommandInfo = {
   name: 'top',
-  execute: async (message: Message): Promise<boolean> => {
+  execute: async (message: Message, input?: string): Promise<boolean> => {
     try {
       if (!topText) {
         message.reply(

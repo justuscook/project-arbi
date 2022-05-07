@@ -59,6 +59,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         let collection = await connectToCollection('buffs_debuffs', mongoClient);
         const buffs = await (await collection.find<IBuffDebuff>({}).toArray()).filter(x => x.type === "buff");
         const debuffs = await (await collection.find<IBuffDebuff>({}).toArray()).filter(x => x.type === "debuff");
+        await mongoClient.close()
         for (const b of buffs) {
             buffsMenu.addOptions([
                 {
@@ -167,12 +168,13 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         return true;
     }
     catch (err) {
+        console.log(err)
         logger.error(err)
         return false;
     }
 }
 
-
+export const usage = `/skill-search`;
 
 
 

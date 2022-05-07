@@ -5,13 +5,13 @@ import { canShow, connectToCollection, connectToDB, delayDeleteMessages, fuzzySe
 
 const commandFile: ICommandInfo = {
     name: 'info',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         try {
             let showInServer = false;
             let row1: MessageActionRow = new MessageActionRow;
             //let allowDM = await canDM(interaction);
             let allowShow = await canShow(message);
-            let champName = getUserInput(message.content)
+            let champName = input;
             if (champName.toLowerCase().includes('show')) {
                 showInServer = true,
                     champName = removeShow(champName);
@@ -46,7 +46,7 @@ const commandFile: ICommandInfo = {
                         url: getFactionImage(champ.faction)
                     },
                     image: {
-                        url: `https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/newAvatars/${champ.id - 6}.png`
+                        url: `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${champ.id - 6}.png`
                     },
                     fields: [{
                         name: 'Faction:',
@@ -187,11 +187,13 @@ const commandFile: ICommandInfo = {
                         repliedUser: false
                     }, content: `${userMention((await message.author.fetch()).id)} I didn't find any matches for your search ${bold(champName)}, please try again.`
                 })
-                return false;
+                return true;
             }
         }
         catch (err) {
+            console.log(err)
             logger.error(err);
+            return false;
         }
     }
 }

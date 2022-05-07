@@ -6,7 +6,7 @@ import { clipText, connectToCollection, connectToDB, fuzzySearch, getInput, getL
 
 const commandFile: ICommandInfo = {
     name: 'skill_search',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         try {
             const selectMenu = new MessageActionRow()
                 .addComponents(
@@ -163,6 +163,7 @@ const commandFile: ICommandInfo = {
             return true;
         }
         catch (err) {
+            console.log(err)
             logger.error(err)
             return false;
         }

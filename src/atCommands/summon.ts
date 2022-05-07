@@ -8,7 +8,7 @@ import { client } from "../arbi";
 
 const commandFile: ICommandInfo = {
     name: 'summon',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         //check events
         let mongoClient = await connectToDB();
         let collection = await connectToCollection('user_shard_data', mongoClient);
@@ -54,8 +54,8 @@ const commandFile: ICommandInfo = {
         }
 
 
-        const input = message.content.split(' ');
-        const shardType = input[2].toLowerCase();
+        
+        const shardType = input.split(' ')[0].toLowerCase();
         const validShardTypes = ['ancient', 'void', 'sacred']
         if (!validShardTypes.includes(shardType)) {
             await message.reply({
@@ -65,7 +65,7 @@ const commandFile: ICommandInfo = {
             })
             return true;
         }
-        let shardsToPull = parseInt(input[3]);
+        let shardsToPull = parseInt(input.split(' ')[1]);
         if (shardsToPull === NaN) {
             await message.reply({
                 allowedMentions: {
@@ -105,7 +105,7 @@ const commandFile: ICommandInfo = {
                     repliedUser: false
                 }, embeds: [notEnough]
             })
-            return false;
+            return true;
         }
         collection = await connectToCollection('shard_data', mongoClient);
         const champPool = await collection.findOne<IChampionPool>({});

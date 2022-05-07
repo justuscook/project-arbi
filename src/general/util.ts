@@ -336,7 +336,7 @@ export async function canDM(interaction: CommandInteraction | Message): Promise<
     if (interaction.guildId === '532196192051003443') {
         const hasRole = await (await interaction.member.roles as GuildMemberRoleManager).cache.hasAny('861626304344490034', '722765643610587177', '837319225449119785', '550640875407933440');
         if (hasRole === false) {
-            return false;
+            return true;
         }
     }
     return true;
@@ -673,7 +673,7 @@ export function getColorByRarity(rarity: string): ColorResolvable {
  * @returns 
  */
 export function getSkillsEmbeds(champ: IChampionInfo, avatar: boolean = false): MessageEmbed[] {
-    const baseURL = 'https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images//'
+    const baseURL = 'https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/SkillImagesWithBorders/'
     const pages: MessageEmbed[] = [];
     //const hqimages = GetHQArt(champ.name);
     let count: number = 1;
@@ -688,7 +688,7 @@ export function getSkillsEmbeds(champ: IChampionInfo, avatar: boolean = false): 
             title: `${champ.name} - ${skillNumber}: ${skill.name}`,
             description: skill.desc,
             image: {
-                url: (champ.rarity !== 'Common') ? `${baseURL}newSkills/${Number(champ.id) - 6}_s${count}.png?=${uuidv1()}` : `${baseURL}newSkills/${champ.id}_s${count}.png?=${uuidv1()}`
+                url: (champ.rarity !== 'Common') ? `${baseURL}${Number(champ.id) - 6}_s${count}.png?=${uuidv1()}` : `${baseURL}${champ.id}_s${count}.png?=${uuidv1()}`
             },
             fields: [
                 {
@@ -835,7 +835,6 @@ export async function getTop(): Promise<string> {
         top100Text += `${(emoji !== '') ? `${emoji} ` : `${i}: `}${user.username}#${user.discriminator}: ${t.shards.ancient.pulled + t.shards.sacred.pulled + t.shards.void.pulled}\n`
         i++;
     }
-    
     return top100Text;
 }
 export async function getLeaderboard(): Promise<Map<string, number>> {

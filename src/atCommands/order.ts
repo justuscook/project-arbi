@@ -5,10 +5,10 @@ import { connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, 
 
 const commandFile: ICommandInfo = {
     name: 'order',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         const args = message.content.split(' ');
         //const order = parseInt(args[args.length - 1]);
-        const search = getInput(message.content)//.replace(order.toString(), '').trim();
+        const search = input//.replace(order.toString(), '').trim();
         try {
             const mongoClient = await connectToDB();
             const collection = await connectToCollection('guides', mongoClient);
@@ -50,6 +50,7 @@ const commandFile: ICommandInfo = {
                             repliedUser: false
                         }, content: 'OK, thanks for verifing.  If it is still wrong in the guides command you can ping Orcinus!'
                     });
+                    await mongoClient.close()
                     return;
                 }
                 if ((!m.content.toLowerCase().includes('a') && !m.content.toLowerCase().includes('b')) || m.content.length != found.length) {
@@ -107,8 +108,9 @@ const commandFile: ICommandInfo = {
                     repliedUser: false
                 }, content: `${userMention(message.author.id)} the guides for ${bold(search)} were not re-ordered, something went wrong!`
             })
+            
         }
-
+        
         return true;
     },
     restricted: true

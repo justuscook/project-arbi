@@ -59,7 +59,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     url: getFactionImage(champ.faction)
                 },
                 image: {
-                    url: `https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/newAvatars/${(champ.id) - 6}.png`
+                    url: `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${(champ.id) - 6}.png`
                 },
                 fields: [{
                     name: 'Faction:',
@@ -174,12 +174,11 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         return true;
     }
     catch (err) {
+        console.log(err)
         logger.error(err);
         return false;
     }
 }
 
 
-
-
-
+export const usage = `/stats input: arbiter`;

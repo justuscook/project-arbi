@@ -6,14 +6,15 @@ import { connectToCollection, connectToDB, fuzzySearch, getInput, getLeaderboard
 
 const commandFile: ICommandInfo = {
     name: 'debuff',
-    execute: async (message: Message): Promise<boolean> => {
+    execute: async (message: Message, input?: string): Promise<boolean> => {
         try {
             const mongoClient = await connectToDB();
             const collection = await connectToCollection('buffs_debuffs', mongoClient);
             const buffs = await collection.find<IBuffDebuff>({}).toArray();
-            const searchArray = message.content.split(' ');
-            searchArray.shift();
-            const searchText = searchArray.join(' ');
+            await mongoClient.close()
+            //const searchArray = message.content.split(' ');
+            //searchArray.shift();
+            const searchText = input;
             const embed: MessageEmbed = new MessageEmbed();
             const found: IBuffDebuff[] = fuzzySearch(buffs,searchText,['name']);
             if(found.length > 0){
@@ -32,6 +33,7 @@ const commandFile: ICommandInfo = {
             return true;
         }
         catch (err) {
+            console.log(err)
             logger.error(err)
             return false;
         }

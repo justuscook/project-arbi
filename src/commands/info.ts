@@ -59,7 +59,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     url: getFactionImage(champ.faction)
                 },
                 image: {
-                    url: `https://raw.githubusercontent.com/justuscook/RaidSL-data/main/data/images/newAvatars/${champ.id - 6}.png`
+                    url: `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${champ.id - 6}.png`
                 },
                 fields: [{
                     name: 'Faction:',
@@ -176,15 +176,16 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         }
         else {
             const fail = await interaction.followUp(`${userMention((await interaction.user.fetch()).id)} I didn't find any matches for your search ${bold(champName)}, please try again.`)
-            return false;
+            return true;
         }
     }
     catch (err) {
+        console.log(err)
         logger.error(err);
     }
 }
 
-;
+export const usage = `/info arbiter`;
 
 
 

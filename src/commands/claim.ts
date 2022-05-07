@@ -171,3 +171,5 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         });
     return true;
 }
+
+export const usage = '/claim'

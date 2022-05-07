@@ -39,12 +39,13 @@ export async function execute(interaction: CommandInteraction) : Promise<boolean
 
     }
     catch(err){
+        console.log(err)
         logger.error(err)
         return false;
     }
 }
 
-
+export const usage = `/server`;
 
 
 
