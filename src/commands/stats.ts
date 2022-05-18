@@ -156,7 +156,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                         description: `${userMention((await interaction.user.fetch()).id)}, ${(allowShow === false && showInServer === true) ? `you can't show commands in this server, only mod in the offical Raid: SL server can.  ` : ``}I have sent the output in a DM, click the button below to check your inbox!`,
                     }
                 )
-                if (interaction.channel.type !== 'DM') {
+                if (interaction.channel.type === 'GUILD_TEXT') {
                     const dmWarn = await interaction.followUp({ embeds: [dmWarnEmbed], components: [inbox] });
                     await delayDeleteMessages([dmWarn as Message], 60 * 1000)
                     const _ = await interaction.user.send({ embeds: [embed] });

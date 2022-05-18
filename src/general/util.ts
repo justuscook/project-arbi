@@ -240,9 +240,9 @@ export async function guideButtonPagination(buttonUserID: string, messages: Mess
     collector.on('collect', async (i: MessageComponentInteraction) => {
         await i.deferUpdate();
         //message = await interaction.fetchReply() as Message;
-        for (const m of messages) {
+        /*for (const m of messages) {
             await m.removeAttachments()
-        }
+        }*/
         await messages[0].edit({ embeds: [embeds[parseInt(i.customId) - 1].topEmbed] });
         await messages[1].edit({ embeds: [embeds[parseInt(i.customId) - 1].midEmbed] });
         //await messages[2].edit({ embeds: [embeds[parseInt(i.customId) - 1].botEmbed]});

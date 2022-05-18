@@ -157,8 +157,6 @@ const commandFile: ICommandInfo = {
                         allowedMentions: {
                             repliedUser: false
                         }, embeds: [embed],
-
-
                     });
                     await mongoClient.close();
                 }
@@ -166,6 +164,4 @@ const commandFile: ICommandInfo = {
         return true;
     }
 }
-
-
 export default commandFile;
