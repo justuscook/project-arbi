@@ -10,8 +10,8 @@ import https from 'https';
 import http from 'http';
 import tracer from 'tracer';
 import * as promClient from 'prom-client';
-import cors from 'cors';
 import axios from 'axios';
+import cors from 'cors'
 import { IShardData } from './general/IShardData';
 import { get } from 'mongoose';
 
@@ -46,10 +46,12 @@ export const client: any = new Client({
         [
             Intents.FLAGS.GUILDS,
             Intents.FLAGS.GUILD_MESSAGES,
-            Intents.FLAGS.DIRECT_MESSAGES
+            Intents.FLAGS.DIRECT_MESSAGES,
+            Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+            Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
         ],
     partials: [
-        'CHANNEL'
+        'CHANNEL','REACTION','MESSAGE'
     ]
 });
 const app = express();
