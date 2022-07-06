@@ -1,7 +1,7 @@
 import { bold, userMention } from "@discordjs/builders";
 import { Message, MessageActionRow, MessageButton, MessageEmbed } from "discord.js";
-import { logger } from "../arbi";
-import { canShow, connectToCollection, connectToDB, delayDeleteMessages, fuzzySearch, getColorByRarity, getFactionImage, getInput, getUserInput, IChampionInfo, ICommandInfo, IGuide, inboxLinkButton, removeShow } from "../general/util";
+import { logger, mongoClient } from "../arbi";
+import { canShow, connectToCollection, delayDeleteMessages, fuzzySearch, getColorByRarity, getFactionImage, IChampionInfo, ICommandInfo, inboxLinkButton, removeShow } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'stats',
@@ -16,10 +16,10 @@ const commandFile: ICommandInfo = {
                 showInServer = true,
                     champName = removeShow(champName);
             }
-            const mongoClient = await connectToDB();
+            
             const collection = await connectToCollection('champion_info', mongoClient);
             const champs = await collection.find<IChampionInfo>({}).toArray();
-            await mongoClient.close();
+            
             const found: IChampionInfo[] = fuzzySearch(champs, champName, ['name']);
 
             if (found.length > 0) {

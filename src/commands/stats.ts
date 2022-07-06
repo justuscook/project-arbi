@@ -1,7 +1,7 @@
-import { bold, Embed, SlashCommandBuilder, userMention } from '@discordjs/builders';
-import discord, { ApplicationCommandPermissionData, CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
-import { getColorByRarity, connectToCollection, fuzzySearch, getFactionImage, IChampionInfo, IGuide, canDM, canShow, inboxLinkButton, delayDeleteMessages, getSkillsEmbeds, skillsButtonPagination, removeShow, connectToDB } from '../general/util';
-import { logger } from '../arbi';
+import { bold, SlashCommandBuilder, userMention } from '@discordjs/builders';
+import { CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
+import { getColorByRarity, connectToCollection, fuzzySearch, getFactionImage, IChampionInfo, canShow, inboxLinkButton, delayDeleteMessages, removeShow } from '../general/util';
+import { logger, mongoClient } from '../arbi';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
@@ -29,10 +29,10 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             showInServer = true,
                 champName = removeShow(champName);
         }
-        const mongoClient = await connectToDB();
+        
         const collection = await connectToCollection('champion_info', mongoClient);
         const champs = await collection.find<IChampionInfo>({}).toArray();
-        await mongoClient.close();
+        
         const found: IChampionInfo[] = fuzzySearch(champs, champName, ['name']);
 
         if (found.length > 0) {

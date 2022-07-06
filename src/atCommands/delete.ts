@@ -1,15 +1,16 @@
 import { bold, userMention } from "@discordjs/builders";
-import { Message, ReplyMessageOptions } from "discord.js";
-import { connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
+import { Message } from "discord.js";
+import { mongoClient } from "../arbi";
+import { connectToCollection, getInput, ICommandInfo } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'delete',
     execute: async (message: Message, input?: string): Promise<boolean> => {
         const search = getInput(message.content);
-        const mongoClient = await connectToDB();
+        
         const collection = await connectToCollection('guides', mongoClient);
         const deletedGuide = await collection.findOneAndDelete({ title: search });
-        await mongoClient.close();
+        
         if (deletedGuide.value) {
             message.reply({
                 allowedMentions: {

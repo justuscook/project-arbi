@@ -2,8 +2,8 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { time } from 'console';
 import exp from 'constants';
 import discord, { ApplicationCommandPermissionData, ButtonInteraction, CommandInteraction, Interaction, MessageActionRow, MessageButton, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, MessageEmbed, MessageSelectMenu, MessageSelectMenuOptions } from 'discord.js';
-import { leaderboard } from '../arbi';
-import { connectToCollection, connectToDB, IGuide } from '../general/util';
+import { leaderboard, mongoClient } from '../arbi';
+import { connectToCollection, IGuide } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
@@ -13,10 +13,10 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
     await interaction.deferReply();
-    const mongoClient = await connectToDB();
+    
     const collection = await connectToCollection('guides', mongoClient);
     const guides = await collection.find<IGuide>({}).toArray();
-    await mongoClient.close()
+    
     let numGuides = 0;
     let numPages = 0;
     let rank = 1;

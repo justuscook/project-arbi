@@ -1,7 +1,7 @@
 import { bold, userMention } from "@discordjs/builders";
 import { Message, MessageEmbed } from "discord.js";
 import { client, leaderboard, logger } from "../arbi";
-import { connectToCollection, connectToDB, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide } from "../general/util";
+import { connectToCollection, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'setstatus',

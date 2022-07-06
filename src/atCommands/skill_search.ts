@@ -1,8 +1,7 @@
-import { bold, userMention } from "@discordjs/builders";
 import { Message, MessageActionRow, MessageEmbed, MessageSelectMenu } from "discord.js";
-import { leaderboard, logger } from "../arbi";
+import { logger, mongoClient } from "../arbi";
 import { IBuffDebuff } from "../general/IBuffDebuff";
-import { clipText, connectToCollection, connectToDB, fuzzySearch, getInput, getLeaderboard, IChampionInfo, ICommandInfo, IGuide } from "../general/util";
+import { clipText, connectToCollection, IChampionInfo, ICommandInfo } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'skill_search',
@@ -51,10 +50,11 @@ const commandFile: ICommandInfo = {
             const buffsMenu = new MessageSelectMenu().setCustomId('buffs').setPlaceholder('Choose a buff');
             const debuffsMenu = new MessageSelectMenu().setCustomId('debuffs').setPlaceholder('Choose a debuff');
     
-            const mongoClient = await connectToDB();
+            
             let collection = await connectToCollection('buffs_debuffs', mongoClient);
             const buffs = await (await collection.find<IBuffDebuff>({}).toArray()).filter(x => x.type === "buff");
             const debuffs = await (await collection.find<IBuffDebuff>({}).toArray()).filter(x => x.type === "debuff");
+            
             for (const b of buffs) {
                 buffsMenu.addOptions([
                     {
@@ -127,7 +127,7 @@ const commandFile: ICommandInfo = {
                     collection = await connectToCollection('champion_info', mongoClient);
                     const champs = await collection.find<IChampionInfo>({}).toArray();
                     let foundChamps: IChampionInfo[] = [];
-                    await mongoClient.close();
+                    
                     if (skillNumber === 'any') {
                         for (const c of champs) {
                             for (const s of c.skills)

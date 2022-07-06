@@ -1,6 +1,6 @@
 import { bold, userMention } from "@discordjs/builders";
 import { Message } from "discord.js";
-import { connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
+import { connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'reboot',

@@ -1,17 +1,17 @@
 import { bold, userMention } from "@discordjs/builders";
 import { Message, MessageEmbed } from "discord.js";
-import { leaderboard, logger } from "../arbi";
+import { leaderboard, logger, mongoClient } from "../arbi";
 import { IBuffDebuff } from "../general/IBuffDebuff";
-import { connectToCollection, connectToDB, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide } from "../general/util";
+import { connectToCollection, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'debuff',
     execute: async (message: Message, input?: string): Promise<boolean> => {
         try {
-            const mongoClient = await connectToDB();
+            
             const collection = await connectToCollection('buffs_debuffs', mongoClient);
             const buffs = await collection.find<IBuffDebuff>({}).toArray();
-            await mongoClient.close()
+            
             //const searchArray = message.content.split(' ');
             //searchArray.shift();
             const searchText = input;

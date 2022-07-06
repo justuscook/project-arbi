@@ -1,7 +1,7 @@
 import { bold, userMention } from "@discordjs/builders";
 import { Message, MessageEmbed } from "discord.js";
 import { client, leaderboard } from "../arbi";
-import { connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
+import { connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
 import fs from 'fs';
 
 const commandFile: ICommandInfo = {

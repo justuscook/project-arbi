@@ -1,9 +1,8 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import exp from 'constants';
-import discord, { CommandInteraction, MessageEmbed } from 'discord.js';
-import { logger } from '../arbi';
-import { IShardData, Mercy, msToTime } from '../general/IShardData';
-import { connectToCollection, connectToDB } from '../general/util';
+import { CommandInteraction, MessageEmbed } from 'discord.js';
+import { mongoClient } from '../arbi';
+import { IShardData, msToTime } from '../general/IShardData';
+import { connectToCollection } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
@@ -12,7 +11,7 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setDescription('Claim your daily tokens for summons!');
 export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
-    const mongoClient = await connectToDB();
+    
     const collection = await connectToCollection('user_shard_data', mongoClient);
     let userData: IShardData = await collection.findOne<IShardData>({ userID: interaction.user.id })
 
@@ -70,7 +69,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
 
             userData.tokens = tokens + userData.tokens;
             userData.lastClaim = new Date(Date.now()),
-                userData.userID = interaction.user.id
+                userData.userID = interaction.user.id;
 
         }
         else {
@@ -91,9 +90,9 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     repliedUser: false
                 }, embeds: [claimed]
             });
-            await mongoClient.close();
             return true;
         }
+
     }
     else {
         const lastClaim = new Date(0);
@@ -155,7 +154,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
 
             if (err) {
                 await interaction.followUp(`╯︿╰ There seems to be an issue claiming your tokens, this is logged and we are looking into it.`)
-                await mongoClient.close();
+                
                 return false;
             }
             else {
@@ -166,7 +165,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
 
 
                 });
-                await mongoClient.close();
+                
             }
         });
     return true;

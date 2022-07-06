@@ -2,7 +2,7 @@ import { SlashCommandBuilder, bold, userMention, Embed, codeBlock } from '@disco
 import { CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbed, MessageEmbedImage, User } from 'discord.js';
 import { IMessageEmbeds } from '../general/util'
 import * as util from '../general/util';
-import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches } from '../arbi';
+import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches, mongoClient } from '../arbi';
 
 export const registerforTesting = false;
 
@@ -67,10 +67,10 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     .setStyle('LINK')
                     .setURL(`https://discord.com/channels/@me/${await (await interaction.user.createDM()).id}`)
             );
-        const mongoClient = await util.connectToDB();
+        
         const collection = await util.connectToCollection('guides', mongoClient);
         const guides = await collection.find<util.IGuide>({}).toArray();
-        await mongoClient.close();
+        
         const phrases = ['early game', 'mid game', 'late game', 'late', 'mid', 'early', 'late game+', 'late game +', 'late game guide', 'late game+ guide'];
         let found: util.IGuide[];
 

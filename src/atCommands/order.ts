@@ -1,7 +1,8 @@
 import { bold, Embed, userMention } from "@discordjs/builders";
 import { Message, MessageEmbed } from "discord.js";
 import { title } from "process";
-import { connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, IGuide, SortByOrder } from "../general/util";
+import { mongoClient } from "../arbi";
+import { connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide, SortByOrder } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'order',
@@ -10,10 +11,10 @@ const commandFile: ICommandInfo = {
         //const order = parseInt(args[args.length - 1]);
         const search = input//.replace(order.toString(), '').trim();
         try {
-            const mongoClient = await connectToDB();
+            
             const collection = await connectToCollection('guides', mongoClient);
             const guides = await collection.find<IGuide>({}).toArray();
-            
+
             /*if (isNaN(order)) {
                 message.reply(`${userMention(message.author.id)} I couldnt tell what number to use for the order!`)
                 return true;
@@ -50,7 +51,7 @@ const commandFile: ICommandInfo = {
                             repliedUser: false
                         }, content: 'OK, thanks for verifing.  If it is still wrong in the guides command you can ping Orcinus!'
                     });
-                    await mongoClient.close()
+                    
                     return;
                 }
                 if ((!m.content.toLowerCase().includes('a') && !m.content.toLowerCase().includes('b')) || m.content.length != found.length) {
@@ -93,13 +94,14 @@ const commandFile: ICommandInfo = {
                     await collection.updateOne({ title: ng.title }, { $set: { "order": ng.order } }, { upsert: true });
                 }
 
-                await mongoClient.close();
+                
                 await message.reply({
                     allowedMentions: {
                         repliedUser: false
                     }, content: `${userMention(message.author.id)} the guides for ${bold(search)} were re-ordered successfully!`
                 })
             });
+            
 
         }
         catch (err) {
@@ -108,9 +110,9 @@ const commandFile: ICommandInfo = {
                     repliedUser: false
                 }, content: `${userMention(message.author.id)} the guides for ${bold(search)} were not re-ordered, something went wrong!`
             })
-            
+
         }
-        
+
         return true;
     },
     restricted: true

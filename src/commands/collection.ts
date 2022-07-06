@@ -1,9 +1,8 @@
 import { bold, SlashCommandBuilder } from '@discordjs/builders';
-import exp from 'constants';
-import discord, { CommandInteraction, Message, MessageActionRow, MessageButton, MessageComponentInteraction, MessageEmbed } from 'discord.js';
-import { logger } from '../arbi';
-import { Champion, IShardData, Mercy, msToTime } from '../general/IShardData';
-import { clipText, connectToCollection, connectToDB, Timeout } from '../general/util';
+import { CommandInteraction, Message, MessageActionRow, MessageButton, MessageComponentInteraction, MessageEmbed } from 'discord.js';
+import { mongoClient } from '../arbi';
+import { Champion, IShardData, msToTime } from '../general/IShardData';
+import { clipText, connectToCollection, Timeout } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
@@ -13,10 +12,10 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
     try {
-        const mongoClient = await connectToDB();
+        
         const collection = await connectToCollection('user_shard_data', mongoClient);
         let userData: IShardData = await collection.findOne<IShardData>({ userID: interaction.user.id });
-        await mongoClient.close()
+        
         const embeds: MessageEmbed[] = [];
         let rareEmbed: MessageEmbed;
         let epicEmbed: MessageEmbed;

@@ -1,10 +1,10 @@
 import { bold, SlashCommandBuilder } from '@discordjs/builders';
 import exp from 'constants';
 import discord, { CommandInteraction, EmbedField, Message, MessageAttachment, MessageEmbed } from 'discord.js';
-import { logger } from '../arbi';
+import { logger, mongoClient } from '../arbi';
 import { champsByRarity, createTenPullImage } from '../general/imageUtils';
 import { IChampPull, IShardData, Mercy, msToTime } from '../general/IShardData';
-import { clipText, connectToCollection, connectToDB, IChampionInfo } from '../general/util';
+import { clipText, connectToCollection, IChampionInfo } from '../general/util';
 import { v1 as uuidv1 } from 'uuid';
 import { APIMessage } from 'discord-api-types';
 
@@ -21,7 +21,6 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
 
-    let mongoClient = await connectToDB();
     let collection = await connectToCollection('user_shard_data', mongoClient);
     let userData: IShardData = await collection.findOne<IShardData>({ userID: interaction.user.id })
     if (!userData) {
@@ -250,8 +249,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         }
         }
         userData.tokens = userData.tokens - shardsToPull;
-        const mongoClient2 = await connectToDB();
-        const collection2 = await connectToCollection('user_shard_data', mongoClient2);
+        const collection2 = await connectToCollection('user_shard_data', mongoClient);
         await collection2.updateOne(
             { userID: interaction.user.id },
             { $set: userData },
@@ -261,14 +259,11 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 if (err) {
                     console.log(err)
                     await interaction.followUp(`╯︿╰ There seems to be an issue summoning your shards, this is logged and we are looking into it.`)
-                    await mongoClient2.close();
                     return false;
                 }
-                else await mongoClient2.close();
 
             });
-        await mongoClient.close();
-        await mongoClient2.close();
+        
         raresField.value = clipText(raresField.value.slice(0, raresField.value.length - 2))
         epicsField.value = clipText(epicsField.value.slice(0, epicsField.value.length - 2))
         legosField.value = clipText(legosField.value.slice(0, legosField.value.length - 2))

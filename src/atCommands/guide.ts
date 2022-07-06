@@ -1,7 +1,7 @@
 import { bold, codeBlock, Embed, userMention } from "@discordjs/builders";
 import { Message, MessageActionRow, MessageButton, MessageEmbed, MessageEmbedImage, MessageReaction, ReplyMessageOptions, User } from "discord.js";
-import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches, leaderboard } from "../arbi";
-import { connectToCollection, connectToDB, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide, IMessageEmbeds } from "../general/util";
+import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches, leaderboard, mongoClient } from "../arbi";
+import { connectToCollection, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide, IMessageEmbeds } from "../general/util";
 import * as util from "../general/util";
 import { content } from "googleapis/build/src/apis/content";
 
@@ -40,10 +40,10 @@ const commandFile: ICommandInfo = {
                         .setStyle('LINK')
                         .setURL(`https://discord.com/channels/@me/${await (await message.author.createDM()).id}`)
                 );
-            const mongoClient = await util.connectToDB();
+            
             const collection = await util.connectToCollection('guides', mongoClient);
             const guides = await collection.find<util.IGuide>({}).toArray();
-            await mongoClient.close();
+            
             const phrases = ['early game', 'mid game', 'late game', 'late', 'mid', 'early', 'late game+', 'late game +', 'late game guide', 'late game+ guide'];
             let found: util.IGuide[];
 

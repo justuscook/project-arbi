@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import discord, { CommandInteraction, Interaction, MessageActionRow, MessageComponentInteraction, MessageEmbed, MessageSelectMenu, SelectMenuInteraction } from 'discord.js';
-import { logger } from '../arbi';
+import { CommandInteraction, MessageActionRow, MessageEmbed, MessageSelectMenu } from 'discord.js';
+import { logger, mongoClient } from '../arbi';
 import { IBuffDebuff } from '../general/IBuffDebuff';
-import { clipText, connectToCollection, connectToDB, fuzzySearch, IChampionInfo } from '../general/util';
+import { clipText, connectToCollection, IChampionInfo } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
@@ -55,11 +55,11 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         const buffsMenu = new MessageSelectMenu().setCustomId('buffs').setPlaceholder('Choose a buff');
         const debuffsMenu = new MessageSelectMenu().setCustomId('debuffs').setPlaceholder('Choose a debuff');
 
-        const mongoClient = await connectToDB();
+        
         let collection = await connectToCollection('buffs_debuffs', mongoClient);
         const buffs = await (await collection.find<IBuffDebuff>({}).toArray()).filter(x => x.type === "buff");
         const debuffs = await (await collection.find<IBuffDebuff>({}).toArray()).filter(x => x.type === "debuff");
-        await mongoClient.close()
+        
         for (const b of buffs) {
             buffsMenu.addOptions([
                 {
@@ -132,7 +132,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 collection = await connectToCollection('champion_info', mongoClient);
                 const champs = await collection.find<IChampionInfo>({}).toArray();
                 let foundChamps: IChampionInfo[] = [];
-                await mongoClient.close();
+                
                 if (skillNumber === 'any') {
                     for (const c of champs) {
                         for (const s of c.skills)

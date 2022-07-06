@@ -1,17 +1,16 @@
 import { bold, userMention } from "@discordjs/builders";
 import { Message, MessageActionRow, MessageButton, MessageComponentInteraction, MessageEmbed } from "discord.js";
 import { totalmem } from "os";
+import { mongoClient } from "../arbi";
 import { Champion, IShardData, msToTime } from "../general/IShardData";
-import { clipText, connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, IGuide, Timeout } from "../general/util";
+import { clipText, connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide, Timeout } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'collection',
     execute: async (message: Message, input?: string): Promise<boolean> => {
         try {
-            const mongoClient = await connectToDB();
             const collection = await connectToCollection('user_shard_data', mongoClient);
             let userData: IShardData = await collection.findOne<IShardData>({ userID: message.author.id });
-            await mongoClient.close()
             const embeds: MessageEmbed[] = [];
             let rareEmbed: MessageEmbed;
             let epicEmbed: MessageEmbed;

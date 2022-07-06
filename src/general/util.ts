@@ -13,7 +13,7 @@ import { dbpass } from '../config.json';
 import { GaxiosResponse } from "gaxios";
 import { content } from "googleapis/build/src/apis/content";
 import { distance } from 'fastest-levenshtein';
-import { client, leaderboard } from "../arbi";
+import { client, leaderboard, mongoClient } from "../arbi";
 import { text } from "body-parser";
 import { isArray } from "util";
 import { IShardData } from "./IShardData";
@@ -484,6 +484,7 @@ export async function
     connectToDB(): Promise<MongoClient> {
     const uri = `mongodb+srv://arbi:${dbpass}@arbi.g6e2c.mongodb.net/Arbi?retryWrites=true&w=majority`;
     const mongoClient: MongoClient = new MongoClient(uri);
+    
     return mongoClient;
 }
 export async function
@@ -782,7 +783,7 @@ interface LeaderboardUser {
 }
 
 export async function getTop(): Promise<string> {
-    const mongoClient = await connectToDB();
+    
     const collection = await connectToCollection('user_shard_data', mongoClient);
     const top100: IShardData[] = await collection.aggregate([
         {
@@ -815,7 +816,7 @@ export async function getTop(): Promise<string> {
             ]
         }
     ]).toArray();
-    await mongoClient.close();
+    
     let top100Text = '';
     let i = 1;
     for (const t of top100) {
@@ -838,10 +839,10 @@ export async function getTop(): Promise<string> {
     return top100Text;
 }
 export async function getLeaderboard(): Promise<Map<string, number>> {
-    const mongoClient = await connectToDB();
+    
     const collection = await connectToCollection('guides', mongoClient);
     const guides = await collection.find<IGuide>({}).toArray();
-    await mongoClient.close()
+    
     console.log(`Number of guides: ${guides.length}`);
     let leaderboardByID: Map<string, number> = new Map<string, number>();
     for (const g of guides) {

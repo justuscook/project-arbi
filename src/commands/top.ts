@@ -3,7 +3,7 @@ import exp from 'constants';
 import discord, { CommandInteraction, MessageEmbed } from 'discord.js';
 import { logger } from '../arbi';
 import { IShardData, Mercy, msToTime } from '../general/IShardData';
-import { clipText, connectToCollection, connectToDB } from '../general/util';
+import { clipText, connectToCollection } from '../general/util';
 import { topText } from '../arbi'
 
 export const registerforTesting = false;

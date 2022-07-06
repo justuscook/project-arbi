@@ -1,17 +1,17 @@
 import { bold, userMention } from "@discordjs/builders";
 import { Message, MessageActionRow, MessageButton, MessageComponentInteraction, MessageEmbed } from "discord.js";
 import { totalmem } from "os";
-import { leaderboard } from "../arbi";
+import { leaderboard, mongoClient } from "../arbi";
 import { Champion, IShardData, msToTime } from "../general/IShardData";
-import { clipText, connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, IGuide, Timeout } from "../general/util";
+import { clipText, connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide, Timeout } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'leaderboard',
     execute: async (message: Message, input?: string): Promise<boolean> => {
-        const mongoClient = await connectToDB();
+        
         const collection = await connectToCollection('guides', mongoClient);
         const guides = await collection.find<IGuide>({}).toArray();
-        await mongoClient.close()
+        
         let numGuides = 0;
         let numPages = 0;
         let rank = 1;

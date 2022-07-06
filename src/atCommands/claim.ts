@@ -1,12 +1,12 @@
 import { bold, userMention } from "@discordjs/builders";
 import { Message, MessageEmbed } from "discord.js";
+import { mongoClient } from "../arbi";
 import { IShardData, msToTime } from "../general/IShardData";
-import { connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
+import { connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'claim',
     execute: async (message: Message, input?: string): Promise<boolean> => {
-        const mongoClient = await connectToDB();
         const collection = await connectToCollection('user_shard_data', mongoClient);
         let userData: IShardData = await collection.findOne<IShardData>({ userID: message.author.id })
 
@@ -85,7 +85,7 @@ const commandFile: ICommandInfo = {
                         repliedUser: false
                     }, embeds: [claimed]
                 });
-                await mongoClient.close();
+                
                 return true;
             }
         }
@@ -149,7 +149,7 @@ const commandFile: ICommandInfo = {
 
                 if (err) {
                     await message.channel.send(`╯︿╰ There seems to be an issue claiming your tokens, this is logged and we are looking into it.`)
-                    await mongoClient.close();
+                    
                     return false;
                 }
                 else {
@@ -158,7 +158,7 @@ const commandFile: ICommandInfo = {
                             repliedUser: false
                         }, embeds: [embed],
                     });
-                    await mongoClient.close();
+                    
                 }
             });
         return true;

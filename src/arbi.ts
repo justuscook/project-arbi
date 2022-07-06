@@ -14,6 +14,7 @@ import axios from 'axios';
 import cors from 'cors'
 import { IShardData } from './general/IShardData';
 import { get } from 'mongoose';
+import { MongoClient } from 'mongodb';
 
 /*
 const api = useRaidToolkitApi(IAccountApi);
@@ -26,7 +27,7 @@ let TOKEN = token;
 let CLIENTID = clientId;
 let ip = '';
 
-
+export let mongoClient: MongoClient;
 export let leaderboard: Map<string, number>;
 export let topText: string;
 export const superUsers = ['227837830704005140', '269643701888745474', '205448080797990912']
@@ -174,7 +175,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
         return;
     }
     await updateFormat(guideResponse.sheetId, guideResponse.range, auth);
-    const mongoClient = await connectToDB();
+    
     const collection = await connectToCollection('guides', mongoClient);
     const guides = await collection.updateOne(
         { title: guide.title },
@@ -183,10 +184,10 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
         async (err: any, result: any) => {
             if (err) {
                 await chan.send(`╯︿╰ The guide submission/update failed.\n${err}`)
-                await mongoClient.close();
+                
             }
             else {
-                await mongoClient.close();
+                
             }
         });
 
@@ -230,6 +231,7 @@ for (const file of commandFiles) {
 }
 
 client.once('ready', async () => {
+    mongoClient = await connectToDB();
     console.log('Ready!');
     await deployCommands();
     const num = await client.guilds.fetch();

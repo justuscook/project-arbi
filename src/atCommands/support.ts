@@ -1,8 +1,5 @@
-import { bold, userMention } from "@discordjs/builders";
-import axios from "axios";
 import { Message, MessageEmbed } from "discord.js";
-import { connectToCollection, connectToDB, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
-import { JSDOM } from 'jsdom';
+import { ICommandInfo } from "../general/util";
 import { logger } from "../arbi";
 
 const commandFile: ICommandInfo = {

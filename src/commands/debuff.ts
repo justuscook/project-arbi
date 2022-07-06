@@ -1,9 +1,8 @@
-import { SlashCommandBuilder, SlashCommandStringOption } from '@discordjs/builders';
-import exp from 'constants';
-import discord, { CommandInteraction, MessageEmbed } from 'discord.js';
-import { logger } from '../arbi';
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { CommandInteraction, MessageEmbed } from 'discord.js';
+import { logger, mongoClient } from '../arbi';
 import { IBuffDebuff } from '../general/IBuffDebuff';
-import { connectToCollection, connectToDB, fuzzySearch } from '../general/util';
+import { connectToCollection, fuzzySearch } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
@@ -17,10 +16,10 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction) : Promise<boolean>{
     await interaction.deferReply();
     try {
-        const mongoClient = await connectToDB();
+        
         const collection = await connectToCollection('buffs_debuffs', mongoClient);
         const buffs = await collection.find<IBuffDebuff>({}).toArray();
-        await mongoClient.close()
+        
         const searchText = interaction.options.getString('input');
         const embed: MessageEmbed = new MessageEmbed();
         const found: IBuffDebuff[] = fuzzySearch(buffs,searchText,['name']);
