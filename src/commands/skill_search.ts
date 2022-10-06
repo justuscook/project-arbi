@@ -1,5 +1,5 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, MessageActionRow, MessageEmbed, MessageSelectMenu } from 'discord.js';
+
+import { CommandInteraction, ActionRowBuilder, EmbedBuilder, SlashCommandBuilder, SelectMenuBuilder, Colors, SelectMenuOptionBuilder, MessageActionRowComponentBuilder, ChatInputCommandInteraction, ComponentType} from 'discord.js';
 import { logger, mongoClient } from '../arbi';
 import { IBuffDebuff } from '../general/IBuffDebuff';
 import { clipText, connectToCollection, IChampionInfo } from '../general/util';
@@ -9,12 +9,12 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('skill_search')
     .setDefaultPermission(true)
     .setDescription('☣ IN TESTING ⚠ Search for buffs/debuffs and filter on skill numbers.');
-export async function execute(interaction: CommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
     await interaction.deferReply();
     try {
-        const selectMenu = new MessageActionRow()
+        const selectMenu = new ActionRowBuilder<MessageActionRowComponentBuilder>()
             .addComponents(
-                new MessageSelectMenu()
+                new SelectMenuBuilder()
                     .setCustomId('skill_number')
                     .setMaxValues(1)
                     .setPlaceholder('Choose a skill number.')
@@ -39,7 +39,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                             value: '4'
                         }])
             )
-        const buffOrDebuffMenu = new MessageSelectMenu()
+        const buffOrDebuffMenu = new SelectMenuBuilder()
             .setCustomId('buff_or_debuff')
             .addOptions([
                 {
@@ -52,8 +52,8 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 }
             ])
 
-        const buffsMenu = new MessageSelectMenu().setCustomId('buffs').setPlaceholder('Choose a buff');
-        const debuffsMenu = new MessageSelectMenu().setCustomId('debuffs').setPlaceholder('Choose a debuff');
+        const buffsMenu = new SelectMenuBuilder().setCustomId('buffs').setPlaceholder('Choose a buff');
+        const debuffsMenu = new SelectMenuBuilder().setCustomId('debuffs').setPlaceholder('Choose a debuff');
 
         
         let collection = await connectToCollection('buffs_debuffs', mongoClient);
@@ -77,37 +77,37 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             ])
         }
         //selectMenu.addComponents(buffsMenu,debuffsMenu);
-        const embed: MessageEmbed = new MessageEmbed({
+        const embed: EmbedBuilder = new EmbedBuilder({
             title: "Choose the skill number to search:",
-            color: 'FUCHSIA'
+            color: Colors.Fuchsia
         })
         let skillNumber = '';
         let buffOrDebuff = '';
         let chosenEffect = '';
 
         await interaction.editReply({ embeds: [embed], components: [selectMenu] });
-        const collector = interaction.channel.createMessageComponentCollector({ componentType: 'SELECT_MENU', filter: (x) => x.user === interaction.user });
+        const collector = interaction.channel.createMessageComponentCollector({ componentType: ComponentType.SelectMenu, filter: (x) => x.user === interaction.user });
         collector.on('collect', async (i) => {
             switch (i.customId) {
                 case 'skill_number': {
                     skillNumber = i.values[0]
                     selectMenu.setComponents([buffOrDebuffMenu])
-                    embed.title = 'Would you like to look for a buff or debuff?';
-                    embed.setColor('BLUE')
+                    embed.data.title = 'Would you like to look for a buff or debuff?';
+                    embed.setColor(Colors.Blue)
                     await i.update({ embeds: [embed], components: [selectMenu] });
                     break;
                 }
                 case 'buff_or_debuff': {
                     if (i.values[0] === 'buff') {
                         selectMenu.setComponents([buffsMenu])
-                        embed.title = 'Choose a buff to look up:';
-                        embed.setColor('ORANGE')
+                        embed.data.title = 'Choose a buff to look up:';
+                        embed.setColor(Colors.Orange)
                         await i.update({ embeds: [embed], components: [selectMenu] });
                     }
                     else {
                         selectMenu.setComponents([debuffsMenu])
-                        embed.title = 'Choose a debuff to look up:';
-                        embed.setColor('YELLOW')
+                        embed.data.title = 'Choose a debuff to look up:';
+                        embed.setColor(Colors.Yellow)
                         await i.update({ embeds: [embed], components: [selectMenu] });
                     }
                     buffOrDebuff = i.values[0];
@@ -124,8 +124,8 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         })
         collector.on('end', async (e) => {
             if (chosenEffect === '') {
-                embed.title = `You didn't respond with enough info in time, try again later.`;
-                embed.setColor('RED');
+                embed.data.title = `You didn't respond with enough info in time, try again later.`;
+                embed.setColor(Colors.Red);
                 interaction.editReply({ embeds: [embed], components: [] })
             }
             else {
@@ -159,9 +159,9 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 for (const f of foundChamps) {
                     foundChampsNames += `${f.name}, `;
                 }
-                embed.setColor('GREEN')
-                embed.title = `Here are the champions I found with ${chosenEffect} on ${(skillNumber === 'any') ? `any skill` : `their A${skillNumber}`}:`
-                embed.description = clipText(foundChampsNames);
+                embed.setColor(Colors.Green)
+                embed.data.title = `Here are the champions I found with ${chosenEffect} on ${(skillNumber === 'any') ? `any skill` : `their A${skillNumber}`}:`
+                embed.data.description = clipText(foundChampsNames);
                 await interaction.editReply({ embeds: [embed] , components: []})
             }
         })

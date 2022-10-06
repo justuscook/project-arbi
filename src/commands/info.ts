@@ -1,6 +1,5 @@
-import { bold, SlashCommandBuilder, userMention } from '@discordjs/builders';
-import { CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
-import { getColorByRarity, connectToCollection, fuzzySearch, getFactionImage, IChampionInfo, canShow, inboxLinkButton, delayDeleteMessages, getSkillsEmbeds, skillsButtonPagination, removeShow } from '../general/util';
+import { CommandInteraction, Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, ChatInputCommandInteraction, bold, ButtonStyle, SlashCommandBuilder, userMention, MessageActionRowComponentBuilder, ChannelType } from 'discord.js';
+import { getColorByRarity, connectToCollection, fuzzySearch, getFactionImage, IChampionInfo, canShow, inboxLinkButton, delayDeleteMessages, getSkillsEmbeds, skillsButtonPagination, removeShow, nonchachedImage } from '../general/util';
 import { logger, mongoClient } from '../arbi';
 
 export const registerforTesting = false
@@ -17,11 +16,11 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setDescription('Search for champion information by name.')
     .setDefaultPermission(true);
 
-export async function execute(interaction: CommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
     await interaction.deferReply();
     try {
         let showInServer = interaction.options.getBoolean('show_in_server');
-        let row1: MessageActionRow = new MessageActionRow;
+        let row1: ActionRowBuilder<MessageActionRowComponentBuilder> = new ActionRowBuilder<MessageActionRowComponentBuilder>;
         //let allowDM = await canDM(interaction);
         let allowShow = await canShow(interaction);
         let champName = interaction.options.getString('champion_name')
@@ -29,10 +28,10 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             showInServer = true,
                 champName = removeShow(champName);
         }
-        
+
         const collection = await connectToCollection('champion_info', mongoClient);
         const champs = await collection.find<IChampionInfo>({}).toArray();
-        
+
         const found: IChampionInfo[] = fuzzySearch(champs, champName, ['name']);
 
         if (found.length > 0) {
@@ -51,15 +50,15 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     }
                 }
             }
-            let embed: MessageEmbed;
-            embed = new MessageEmbed({
+            let embed: EmbedBuilder;
+            embed = new EmbedBuilder({
                 title: (champ.name),
                 color: getColorByRarity(champ.rarity),
                 thumbnail: {
                     url: getFactionImage(champ.faction)
                 },
                 image: {
-                    url: `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${champ.id - 6}.png`
+                    url: `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${(champ.rarity !== 'Common') ? champ.id - 6 : champ.id}.png${nonchachedImage()}`
                 },
                 fields: [{
                     name: 'Faction:',
@@ -124,21 +123,21 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
 
             });
             if (champ.aura) {
-                embed.addField('Aura:', champ.aura, false);
+                embed.addFields({ name: 'Aura:', value: champ.aura, inline: false });
             }
-            embed.addField('Books to max skills:', champ.totalBooks, false);
+            embed.addFields({name: 'Books to max skills:', value: champ.totalBooks, inline: false});
 
             if (otherMatches !== '') {
-                embed.footer = {
+                embed.data.footer = {
                     text: `Not the right champion? Try one of these searches: ${otherMatches}`
                 }
             }
-            const skillsEmbeds: MessageEmbed[] = getSkillsEmbeds(champ, false);
+            const skillsEmbeds: EmbedBuilder[] = getSkillsEmbeds(champ, false);
             let i = 1;
             for (const s of champ.skills) {
                 row1.addComponents(
-                    new MessageButton()
-                        .setStyle((i === 1) ? 'PRIMARY' : 'SUCCESS')
+                    new ButtonBuilder()
+                        .setStyle((i === 1) ? ButtonStyle.Primary : ButtonStyle.Success)
                         .setCustomId(`${i}`)
                         .setLabel(`A${i} - ${s.name}`)
                 )
@@ -153,12 +152,12 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             }
             else {
                 const inbox = await inboxLinkButton(interaction.user);
-                const dmWarnEmbed: MessageEmbed = new MessageEmbed(
+                const dmWarnEmbed: EmbedBuilder = new EmbedBuilder(
                     {
                         description: `${userMention((await interaction.user.fetch()).id)}, ${(allowShow === false && showInServer === true) ? `you can't show commands in this server, only mod in the offical Raid: SL server can.  ` : ``}I have sent the output in a DM, click the button below to check your inbox!`,
                     }
                 )
-                if (interaction.channel.type === 'GUILD_TEXT') {
+                if (interaction.channel.type === ChannelType.GuildText) {
                     const dmWarn = await interaction.followUp({ embeds: [dmWarnEmbed], components: [inbox] });
                     await delayDeleteMessages([dmWarn as Message], 60 * 1000)
                     const _ = await interaction.user.send({ embeds: [embed] });

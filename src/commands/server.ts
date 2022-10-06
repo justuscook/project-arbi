@@ -1,7 +1,5 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
 import axios from 'axios';
-import exp from 'constants';
-import discord, { CommandInteraction, MessageEmbed } from 'discord.js';
+import discord, { CommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { JSDOM } from 'jsdom';
 import { logger } from '../arbi';
 
@@ -12,7 +10,7 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setDescription('Join the support server to get help or just chat with us');
 export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
-    let embed: MessageEmbed;
+    let embed: EmbedBuilder;
     let statusText: string;
     try {
         const response = await axios({
@@ -22,7 +20,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         const dom = new JSDOM(response.data.article.body)
         statusText = dom.window.document.querySelector('span').textContent;
         const title = response.data.article.title;
-        embed = new MessageEmbed(
+        embed = new EmbedBuilder(
             {
                 description: statusText,
                 author: {
@@ -42,7 +40,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         return true;
     }
     catch (err) {
-        embed = new MessageEmbed(
+        embed = new EmbedBuilder(
             {
                 description: "The server is not responding, its probably down for maintenance.",
                 author: {
@@ -54,7 +52,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 }
             }
         )
-        embed.description = '.'
+        embed.setDescription('.');
         await interaction.followUp({
             allowedMentions: {
                 repliedUser: false

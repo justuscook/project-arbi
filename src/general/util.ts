@@ -1,11 +1,10 @@
-import { ApplicationCommandPermissionData, Client, ClientApplication, ColorResolvable, CommandInteraction, GuildMemberRoleManager, Message, MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction, MessageEmbed, MessageEmbedOptions, TextChannel, User, Util } from "discord.js";
+import { Client, ClientApplication, ColorResolvable, CommandInteraction, GuildMemberRoleManager, Message, ActionRowBuilder, AttachmentBuilder, ButtonBuilder, MessageComponentInteraction, EmbedBuilder, TextChannel, User, Colors, ButtonStyle, ButtonComponent, bold, MessageActionRowComponentBuilder } from "discord.js";
 import { google } from 'googleapis';
 import { Storage } from '@google-cloud/storage';
 import path from 'path';
 import Fuse from 'fuse.js';
 import Axios from 'axios';
 import { v1 as uuidv1 } from 'uuid';
-import { bold, Embed } from "@discordjs/builders";
 import { TIMEOUT } from "dns";
 import { time } from "console";
 import { Db, MongoClient, Collection } from "mongodb";
@@ -13,11 +12,14 @@ import { dbpass } from '../config.json';
 import { GaxiosResponse } from "gaxios";
 import { content } from "googleapis/build/src/apis/content";
 import { distance } from 'fastest-levenshtein';
-import { client, leaderboard, mongoClient } from "../arbi";
+import { client, leaderboard, logger, mongoClient } from "../arbi";
 import { text } from "body-parser";
 import { isArray } from "util";
 import { IShardData } from "./IShardData";
 
+export function nonchachedImage() {
+    return `?=${uuidv1()}`;
+}
 
 export function clipText(text: string): string {
     if (text.length > 1000) {
@@ -200,7 +202,7 @@ export function matchStrength(target: string, match: string): number {
     return (match.length - (d - Math.max(0, target.length - match.length))) / match.length;
 }
 
-export async function getMessageAttacment(image: string): Promise<MessageAttachment> {
+export async function getMessageAttacment(image: string): Promise<AttachmentBuilder> {
     let imageDownload;
     if (image.includes('open?id')) {
         imageDownload = await Axios({
@@ -217,16 +219,16 @@ export async function getMessageAttacment(image: string): Promise<MessageAttachm
         });
     }
     const id = uuidv1();
-    return new MessageAttachment(imageDownload.data, `${id}.png`);
+    return new AttachmentBuilder(imageDownload.data, { name: `${id}.png` });
 }
 
 export interface IMessageEmbeds {
-    topEmbed: MessageEmbed,
-    midEmbed: MessageEmbed,
-    botEmbed: MessageEmbed,
-    topImage?: MessageAttachment,
-    midImage?: MessageAttachment,
-    botImage?: MessageAttachment
+    topEmbed: EmbedBuilder,
+    midEmbed: EmbedBuilder,
+    botEmbed: EmbedBuilder,
+    topImage?: AttachmentBuilder,
+    midImage?: AttachmentBuilder,
+    botImage?: AttachmentBuilder
 }
 /**
  * Create buttons for pagination.
@@ -246,18 +248,22 @@ export async function guideButtonPagination(buttonUserID: string, messages: Mess
         await messages[0].edit({ embeds: [embeds[parseInt(i.customId) - 1].topEmbed] });
         await messages[1].edit({ embeds: [embeds[parseInt(i.customId) - 1].midEmbed] });
         //await messages[2].edit({ embeds: [embeds[parseInt(i.customId) - 1].botEmbed]});
-        const rows = messages[2].components;
-        for (const row of rows) {
-            for (const b of row.components) {
+        //const rows = messages[2].components;
+        let rows : ActionRowBuilder<MessageActionRowComponentBuilder>[] = [];
+        for (const row of messages[2].components) {
+            let newRow:  ActionRowBuilder<MessageActionRowComponentBuilder> = new ActionRowBuilder();
+            for (let b of row.components) {
                 if (b.customId !== i.customId) {
-                    (b as MessageButton).setStyle('SUCCESS')
+                    //ActionRowBuilder.from(message.components[0]);
+                    newRow.addComponents(ButtonBuilder.from(b as ButtonComponent).setStyle(ButtonStyle.Success));
                 }
                 else {
-                    (b as MessageButton).setStyle('PRIMARY')
+                    newRow.addComponents(ButtonBuilder.from(b as ButtonComponent).setStyle(ButtonStyle.Primary));
                 }
             }
+            rows.push(newRow);
         }
-        if (rows.length > 1) {
+        if (messages[2].components.length > 1) {
             await i.editReply({ embeds: [embeds[parseInt(i.customId) - 1].botEmbed], components: [rows[0], rows[1]] })
         }
         else {
@@ -268,7 +274,7 @@ export async function guideButtonPagination(buttonUserID: string, messages: Mess
         for (const m of messages) {
             for (const r of m.components) {
                 for (const c of r.components) {
-                    c.setDisabled(true);
+                    ButtonBuilder.from(c as ButtonComponent).setDisabled(true);
                 }
             }
             await m.edit({ components: m.components })
@@ -279,9 +285,9 @@ export async function guideButtonPagination(buttonUserID: string, messages: Mess
  * SKills embeds for pagination.
  * @param {string} buttonUserID User ID to watch for, ignore others.
  * @param {Message} message Message to edit with pagination.
- * @param {MessageEmbed[]} embeds Array of skill embeds.
+ * @param {EmbedBuilder[]} embeds Array of skill embeds.
  */
-export async function skillsButtonPagination(buttonUserID: string, message: Message, embeds: MessageEmbed[]) {
+export async function skillsButtonPagination(buttonUserID: string, message: Message, embeds: EmbedBuilder[]) {
     const filter = i => i.user.id === buttonUserID;
     const collector = message.createMessageComponentCollector({ filter, time: Timeout.Mins15 });//time: util.Timeout.Mins15
     collector.on('collect', async (i: MessageComponentInteraction) => {
@@ -291,16 +297,20 @@ export async function skillsButtonPagination(buttonUserID: string, message: Mess
 
         await message.edit({ embeds: [embeds[parseInt(i.customId) - 1]] });
         //await messages[2].edit({ embeds: [embeds[parseInt(i.customId) - 1].botEmbed]});
-        const rows = message.components;
-        for (const row of rows) {
+        //const rows = message.components;
+        let rows : ActionRowBuilder<MessageActionRowComponentBuilder>[] = [];
+        for (const row of message.components) {
+            let newRow:  ActionRowBuilder<MessageActionRowComponentBuilder> = new ActionRowBuilder();
             for (const b of row.components) {
                 if (b.customId !== i.customId) {
-                    (b as MessageButton).setStyle('SUCCESS')
+                    //ActionRowBuilder.from(message.components[0]);
+                    newRow.addComponents(ButtonBuilder.from(b as ButtonComponent).setStyle(ButtonStyle.Success));
                 }
                 else {
-                    (b as MessageButton).setStyle('PRIMARY')
+                    newRow.addComponents(ButtonBuilder.from(b as ButtonComponent).setStyle(ButtonStyle.Primary));
                 }
             }
+            rows.push(newRow);
         }
         if (rows.length > 1) {
             await i.editReply({ embeds: [embeds[parseInt(i.customId) - 1]], components: [rows[0], rows[1]] })
@@ -313,7 +323,7 @@ export async function skillsButtonPagination(buttonUserID: string, message: Mess
         const components = message.components;
         for (const r of components) {
             for (const c of r.components) {
-                c.setDisabled(true);
+                ButtonBuilder.from(c as ButtonComponent).setDisabled(true);
             }
         }
         await message.edit({ components: components })
@@ -384,12 +394,12 @@ export interface Data {
     image?: string;
 }
 
-export async function inboxLinkButton(user: User): Promise<MessageActionRow> {
-    const inbox = new MessageActionRow()
+export async function inboxLinkButton(user: User): Promise<ActionRowBuilder<ButtonBuilder>> {
+    const inbox: ActionRowBuilder<ButtonBuilder> = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
-            new MessageButton()
+            new ButtonBuilder()
                 .setLabel('Inbox')
-                .setStyle('LINK')
+                .setStyle(ButtonStyle.Link)
                 .setURL(`https://discord.com/channels/@me/${await (await user.createDM()).id}`)
         );
     return inbox;
@@ -484,7 +494,7 @@ export async function
     connectToDB(): Promise<MongoClient> {
     const uri = `mongodb+srv://arbi:${dbpass}@arbi.g6e2c.mongodb.net/Arbi?retryWrites=true&w=majority`;
     const mongoClient: MongoClient = new MongoClient(uri);
-    
+
     return mongoClient;
 }
 export async function
@@ -530,7 +540,7 @@ export async function uploadImage(url: string, client: Client, auth): Promise<st
         const imageChan: TextChannel = await client.channels.fetch('897175894949523557') as TextChannel;
 
         const id = uuidv1();
-        const imageFile: MessageAttachment = new MessageAttachment(Buffer.from(response.data), `${id}.png`);
+        const imageFile: AttachmentBuilder = new AttachmentBuilder(Buffer.from(response.data), { name: `${id}.png` });
         const imageUpload: Message = await imageChan.send({ files: [imageFile] })
         newUrl = imageUpload.attachments.first().url;
 
@@ -646,23 +656,23 @@ export function getFactionImage(faction: string): string {
  * @param {string} rarity Champion rarity.
  * @returns {ColorResolvable} Color for the champion border.
  */
-export function getColorByRarity(rarity: string): ColorResolvable {
-    let color: ColorResolvable = 'GOLD';
+export function getColorByRarity(rarity: string): number {
+    let color: number = Colors.Gold;
     switch (rarity.toLowerCase()) {
         case 'common':
-            color = 'LIGHT_GREY';
+            color = Colors.LightGrey;
             break;
         case 'uncommon':
-            color = 'GREEN';
+            color = Colors.Green;
             break;
         case 'rare':
-            color = 0x00FFFF;
+            color = Colors.Blue;
             break;
         case 'epic':
-            color = 'PURPLE'
+            color = Colors.Purple
             break;
         case 'legendary':
-            color = 'GOLD';
+            color = Colors.Gold;
             break;
     }
     return color;
@@ -673,9 +683,9 @@ export function getColorByRarity(rarity: string): ColorResolvable {
  * @param {boolean} avatar Wheter or not to include the champion avatar as the thumbnail. If this is used for only skills will include the champion avatar as the embed thumbnail.
  * @returns 
  */
-export function getSkillsEmbeds(champ: IChampionInfo, avatar: boolean = false): MessageEmbed[] {
+export function getSkillsEmbeds(champ: IChampionInfo, avatar: boolean = false): EmbedBuilder[] {
     const baseURL = 'https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/SkillImagesWithBorders/'
-    const pages: MessageEmbed[] = [];
+    const pages: EmbedBuilder[] = [];
     //const hqimages = GetHQArt(champ.name);
     let count: number = 1;
     let maxBooks = 0;
@@ -684,7 +694,7 @@ export function getSkillsEmbeds(champ: IChampionInfo, avatar: boolean = false): 
 
         skillNumber = `A${count.toString()} `;
 
-        const embed: MessageEmbed = new MessageEmbed({
+        const embed: EmbedBuilder = new EmbedBuilder({
             color: getColorByRarity(champ.rarity),
             title: `${champ.name} - ${skillNumber}: ${skill.name}`,
             description: skill.desc,
@@ -726,9 +736,9 @@ export function getSkillsEmbeds(champ: IChampionInfo, avatar: boolean = false): 
             ]
         });
         if (avatar) {
-            embed.thumbnail = {
-                url: (champ.rarity !== 'Common') ? `${baseURL}champions/${Number(champ.id) - 6}.png?=${uuidv1()}` : `${baseURL}champions/${champ.id}.png?=${uuidv1()}`
-            }
+            embed.setThumbnail(
+                (champ.rarity !== 'Common') ? `${baseURL}champions/${Number(champ.id) - 6}.png?=${uuidv1()}` : `${baseURL}champions/${champ.id}.png?=${uuidv1()}`
+            )
         }
 
         count += 1;
@@ -783,7 +793,7 @@ interface LeaderboardUser {
 }
 
 export async function getTop(): Promise<string> {
-    
+
     const collection = await connectToCollection('user_shard_data', mongoClient);
     const top100: IShardData[] = await collection.aggregate([
         {
@@ -816,7 +826,7 @@ export async function getTop(): Promise<string> {
             ]
         }
     ]).toArray();
-    
+
     let top100Text = '';
     let i = 1;
     for (const t of top100) {
@@ -839,10 +849,10 @@ export async function getTop(): Promise<string> {
     return top100Text;
 }
 export async function getLeaderboard(): Promise<Map<string, number>> {
-    
+
     const collection = await connectToCollection('guides', mongoClient);
     const guides = await collection.find<IGuide>({}).toArray();
-    
+
     console.log(`Number of guides: ${guides.length}`);
     let leaderboardByID: Map<string, number> = new Map<string, number>();
     for (const g of guides) {
@@ -895,4 +905,57 @@ export function removeItemFromArray(array: Array<string>, item: string) {
     if (index > -1) {
         array.splice(index, 1);
     }
+}
+
+export function getRandomIntInclusive(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
+}
+
+export async function handelError(err: any, user: User, command: string, channel: TextChannel) {
+    logger.log(`Command: ${command}\n`
+        + `Channel: ${channel.name}`
+        + `Server: ${(channel.guildId) ? `${channel.guild}- ID: ${channel.guildId}` : `DM\n`}`
+        + `User: ${user.username}`
+        + `Code: ${err.code}`
+        + `Error: ${err}`);
+    let messageText;
+    switch (err.code) {
+        case 50007: {
+            messageText = `You seem to have bot DM's blocked.  There are a few ways this can be done, here is a list of what can cause this and how to fix it:\n` +
+                `1. You have DM's from server members off, Go to 'Privacy Settings' for the server you tried the command, and make sure the button is grey and has an X, or toggle it to turn that setting off\n.` +
+                `2. Under your account settings you are scanning all messages.  Under 'Privacy and Safety' then 'Safe Direct Messaging' lower the level of scanning until the messages go through.\n` +
+                `3. Make sure you don't have Arbie blocked.`
+            break;
+        }
+        default: {
+            messageText = `There was an error with your command, it has been logged and we are looking into it!`
+        }
+    }
+    await channel.send(`${user}, ${messageText}`);
+}
+
+
+export async function handelSlashCommandError(err: any, user: User, command: string, channel: TextChannel) {
+    logger.log(`Command: ${command}\n`
+        + `Channel: ${channel.name}`
+        + `Server: ${(channel.guildId) ? `${channel.guild}- ID: ${channel.guildId}` : `DM\n`}`
+        + `User: ${user.username}`
+        + `Code: ${err.code}`
+        + `Error: ${err}`);
+    let messageText;
+    switch (err.code) {
+        case 50007: {
+            messageText = `You seem to have bot DM's blocked.  There are a few ways this can be done, here is a list of what can cause this and how to fix it:\n` +
+                `1. You have DM's from server members off, Go to 'Privacy Settings' for the server you tried the command, and make sure the button is grey and has an X, or toggle it to turn that setting off\n.` +
+                `2. Under your account settings you are scanning all messages.  Under 'Privacy and Safety' then 'Safe Direct Messaging' lower the level of scanning until the messages go through.\n` +
+                `3. Make sure you don't have Arbie blocked.`
+            break;
+        }
+        default: {
+            messageText = `There was an error with your command, it has been logged and we are looking into it!`
+        }
+    }
+    return messageText;
 }

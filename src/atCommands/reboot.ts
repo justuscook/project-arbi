@@ -1,4 +1,3 @@
-import { bold, userMention } from "@discordjs/builders";
 import { Message } from "discord.js";
 import { connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
 

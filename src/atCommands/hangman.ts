@@ -1,7 +1,6 @@
-import { bold, codeBlock, userMention } from "@discordjs/builders";
-import { CollectorFilter, Interaction, Message, MessageEmbed, MessageReaction, ReactionCollector, User } from "discord.js";
+import { CollectorFilter, Interaction, Message, EmbedBuilder, MessageReaction, ReactionCollector, User, codeBlock } from "discord.js";
 import { IShardData, msToTime } from "../general/IShardData";
-import { getRandomIntInclusive } from "./summon";
+import { getRandomIntInclusive, nonchachedImage } from "../general/util";
 import { clipText, connectToCollection, fuzzySearch, getInput, getTop, IChampionInfo, ICommandInfo, IGuide } from "../general/util";
 import { mongoClient, topText } from '../arbi';
 
@@ -52,13 +51,14 @@ const commandFile: ICommandInfo = {
                 return user.id === message.author.id;
             };
             let guesses = [];
-             const gameEmbed: MessageEmbed = new MessageEmbed()
-          .setDescription(codeBlock(wrongs[0]))
-          .setTitle('Guess the champion!')
-          .addField('How to play:', 'Use letter reactions :regional_indicator_a::regional_indicator_b::regional_indicator_c:...:regional_indicator_z: to guess letters.')
-          .addField('Difficulty:', input, false)
-          .addField('Guesses:', (guesses.length === 0) ? 'None yet' : guesses.join('').toUpperCase(), false)
-          .addField("Your word:", codeBlock(wordFiltered))
+            const gameEmbed: EmbedBuilder = new EmbedBuilder()
+                .setDescription(codeBlock(wrongs[0]))
+                .setTitle('Guess the champion!')
+                .addFields({ name: 'How to play:', value: 'Use letter reactions :regional_indicator_a::regional_indicator_b::regional_indicator_c:...:regional_indicator_z: to guess letters.' },
+                    { name: 'Difficulty:', value: input, inline: false },
+                    { name: 'Guesses:', value: (guesses.length === 0) ? 'None yet' : guesses.join('').toUpperCase(), inline: false },
+                    { name: "Your word:", value: codeBlock(wordFiltered) }
+                )
             const game = await message.channel.send({ embeds: [gameEmbed] });
             await game.react('❓');
             const collector = game.createReactionCollector({ filter, time: 15 * 60 * 1000 });
@@ -86,8 +86,8 @@ const commandFile: ICommandInfo = {
                                 newEmbed.description = codeBlock(wrongs[wrongGuesses.length]);
                                 const collection = await connectToCollection('champion_info', mongoClient);
                                 const champs = await collection.find({}).toArray();
-                                const found =fuzzySearch(champs, word, ['name']);
-                                newEmbed.image = { url: `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${found[0].id - 6}.png` };
+                                const found = fuzzySearch(champs, word, ['name']);
+                                newEmbed.image = { url: `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${found[0].id - 6}.png${nonchachedImage()}` };
                                 newEmbed.addField('GAME OVER!', `💀🪢${message.author} you lost!💀🪢`);
                                 collector.stop();
                                 newEmbed.fields.find(x => x.name === 'Your word:').value = codeBlock(word);
@@ -104,7 +104,7 @@ const commandFile: ICommandInfo = {
                         const collection = await connectToCollection('champion_info', mongoClient);
                         const champs = await collection.find({}).toArray();
                         const found = fuzzySearch(champs, word, ['name']);
-                        const champImage = `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${found[0].id - 6}.png`;
+                        const champImage = `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${found[0].id - 6}.png${nonchachedImage()}`;
                         newEmbed.setImage(champImage);
                         newEmbed.addField('GAME OVER!', `🎉💥${message.author} you won!🎉💥`);
                         collector.stop();
@@ -145,73 +145,73 @@ const commandFile: ICommandInfo = {
 export default commandFile;
 
 async function calcDifficulties() {
-  
-  const collection = await connectToCollection('champion_info', mongoClient);
-  const champNames: IChampionInfo[] = await collection.find<IChampionInfo>({}).toArray();
-  
-  if (easy.length === 0) {
-    const easyChamps = champNames.filter(x => x.name.length <= 5);
-    easy = easyChamps.map(x => x.name);
-    const brutalCHamps = champNames.filter(x => (x.name.length <= 10) && (x.name.length > 5));
-    brutal = brutalCHamps.map(x => x.name);
-    const nightmareChamps = champNames.filter(x => x.name.length > 10);
-    nightmare = nightmareChamps.map(x => x.name);
-  }
+
+    const collection = await connectToCollection('champion_info', mongoClient);
+    const champNames: IChampionInfo[] = await collection.find<IChampionInfo>({}).toArray();
+
+    if (easy.length === 0) {
+        const easyChamps = champNames.filter(x => x.name.length <= 5);
+        easy = easyChamps.map(x => x.name);
+        const brutalCHamps = champNames.filter(x => (x.name.length <= 10) && (x.name.length > 5));
+        brutal = brutalCHamps.map(x => x.name);
+        const nightmareChamps = champNames.filter(x => x.name.length > 10);
+        nightmare = nightmareChamps.map(x => x.name);
+    }
 }
 
 function getMatchedRegEx(guesses?: string[]): RegExp {
-  if (guesses === undefined) {
-    return new RegExp(`[a-z\u00C0-\u00FF]`, 'gi');
-  }
-  const regexText = guesses.join('|');
-  let regex: RegExp = new RegExp(`(?!${regexText})[a-z\u00C0-\u00FF]`, 'gi');
-  return regex;
+    if (guesses === undefined) {
+        return new RegExp(`[a-z\u00C0-\u00FF]`, 'gi');
+    }
+    const regexText = guesses.join('|');
+    let regex: RegExp = new RegExp(`(?!${regexText})[a-z\u00C0-\u00FF]`, 'gi');
+    return regex;
 }
 const wrongs: string[] = [
     "ſ ̅ ̅ \n" +
-        "|\n" +
-        "|\n" +
-        "|\n" +
-        "|\n" +
-        "⊥",
+    "|\n" +
+    "|\n" +
+    "|\n" +
+    "|\n" +
+    "⊥",
     "ſ ̅ ̅ O\n" +
-        "|\n" +
-        "|\n" +
-        "|\n" +
-        "|\n" +
-        "⊥",
+    "|\n" +
+    "|\n" +
+    "|\n" +
+    "|\n" +
+    "⊥",
     "ſ ̅ ̅ O\n" +
-        "|   |\n" +
-        "|\n" +
-        "|\n" +
-        "|\n" +
-        "⊥",
+    "|   |\n" +
+    "|\n" +
+    "|\n" +
+    "|\n" +
+    "⊥",
     "ſ ̅ ̅ O\n" +
-        "|  -|\n" +
-        "|\n" +
-        "|\n" +
-        "|\n" +
-        "⊥",
+    "|  -|\n" +
+    "|\n" +
+    "|\n" +
+    "|\n" +
+    "⊥",
     "ſ ̅ ̅ O\n" +
-        "|  -|-\n" +
-        "|   |\n" +
-        "|\n" +
-        "|\n" +
-        "⊥",
+    "|  -|-\n" +
+    "|   |\n" +
+    "|\n" +
+    "|\n" +
+    "⊥",
     "ſ ̅ ̅ O\n" +
-        "|  -|-\n" +
-        "|   |\n" +
-        "|  / \n" +
-        "|\n" +
-        "⊥",
+    "|  -|-\n" +
+    "|   |\n" +
+    "|  / \n" +
+    "|\n" +
+    "⊥",
     "ſ ̅ ̅ O\n" +
-        "|  -|-\n" +
-        "|   |\n" +
-        "|  / \\\n" +
-        "|\n" +
-        "⊥"
+    "|  -|-\n" +
+    "|   |\n" +
+    "|  / \\\n" +
+    "|\n" +
+    "⊥"
 ];
-function emojiToLetter(emoji: string){
+function emojiToLetter(emoji: string) {
     switch (emoji) {
         case '🇦':
             return 'a';

@@ -1,5 +1,4 @@
-import { bold, userMention } from "@discordjs/builders";
-import { Message, MessageEmbed } from "discord.js";
+import { Message, EmbedBuilder } from "discord.js";
 import { mongoClient } from "../arbi";
 import { IShardData, msToTime } from "../general/IShardData";
 import { connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
@@ -35,7 +34,7 @@ const commandFile: ICommandInfo = {
             color = 0xFFCF61;
             image = 'https://cdn.discordapp.com/attachments/897175894949523557/951140962145558528/gold.png'
         }
-        const embed: MessageEmbed = new MessageEmbed(
+        const embed: EmbedBuilder = new EmbedBuilder(
             {
                 color: color,
                 description: text,
@@ -72,7 +71,7 @@ const commandFile: ICommandInfo = {
                 const midnight = new Date;
                 midnight.setUTCHours(24, 0, 0, 0);
                 const waitTime = midnight.getTime() - now.getTime();
-                const claimed = new MessageEmbed(
+                const claimed = new EmbedBuilder(
                     {
                         description: `You have already claimed your daily chest today, try again in ${msToTime(waitTime)}.`,
                         footer: {

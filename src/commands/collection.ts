@@ -1,5 +1,4 @@
-import { bold, SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, Message, MessageActionRow, MessageButton, MessageComponentInteraction, MessageEmbed } from 'discord.js';
+import { CommandInteraction, Message, ActionRowBuilder, ButtonBuilder, MessageComponentInteraction, EmbedBuilder, SlashCommandBuilder, Colors, ButtonStyle, MessageActionRowComponentBuilder, ButtonComponent, ComponentType, bold } from 'discord.js';
 import { mongoClient } from '../arbi';
 import { Champion, IShardData, msToTime } from '../general/IShardData';
 import { clipText, connectToCollection, Timeout } from '../general/util';
@@ -12,20 +11,20 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction): Promise<boolean> {
     await interaction.deferReply();
     try {
-        
+
         const collection = await connectToCollection('user_shard_data', mongoClient);
         let userData: IShardData = await collection.findOne<IShardData>({ userID: interaction.user.id });
-        
-        const embeds: MessageEmbed[] = [];
-        let rareEmbed: MessageEmbed;
-        let epicEmbed: MessageEmbed;
-        let legoEmbed: MessageEmbed;
+
+        const embeds: EmbedBuilder[] = [];
+        let rareEmbed: EmbedBuilder;
+        let epicEmbed: EmbedBuilder;
+        let legoEmbed: EmbedBuilder;
         const now: Date = new Date(Date.now());
         const midnight = new Date;
         midnight.setUTCHours(24, 0, 0, 0);
         const waitTime = midnight.getTime() - now.getTime();
         if (userData) {
-            rareEmbed = new MessageEmbed({
+            rareEmbed = new EmbedBuilder({
                 fields: [
                     {
                         name: 'Tokens:',
@@ -44,7 +43,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 description: `Info about your collection and rares:`
             })
 
-            epicEmbed = new MessageEmbed({
+            epicEmbed = new EmbedBuilder({
                 fields: [
                     {
                         name: 'Tokens:',
@@ -59,11 +58,11 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                         value: (userData.champions.rare.length > 0) ? getCollectionText(userData.champions.epic) : `You don't have any epics?  Have you tried a sacred shard lol...`
                     }
                 ],
-                color: 'PURPLE',
+                color: Colors.Purple,
                 description: `Info about your collection and epics:`
             })
 
-            legoEmbed = new MessageEmbed({
+            legoEmbed = new EmbedBuilder({
                 fields: [
                     {
                         name: 'Tokens:',
@@ -78,23 +77,23 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                         value: (userData.champions.rare.length > 0) ? getCollectionText(userData.champions.legendary) : `You don't have any legos?  Try /summon sacred 100...`
                     }
                 ],
-                color: 'GOLD',
+                color: Colors.Gold,
                 description: `Info about your collection and legendaries:`
             })
-            let row1: MessageActionRow = new MessageActionRow;
+            let row1: ActionRowBuilder<ButtonBuilder> = new ActionRowBuilder;
             row1.addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId('lego')
                     .setLabel('Legendaries')
-                    .setStyle('PRIMARY'),
-                new MessageButton()
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
                     .setCustomId('epic')
                     .setLabel('Epics')
-                    .setStyle('SUCCESS'),
-                new MessageButton()
+                    .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
                     .setCustomId('rare')
                     .setLabel('Rares')
-                    .setStyle('SUCCESS')
+                    .setStyle(ButtonStyle.Success)
             )
 
             const collectionMessage = await interaction.followUp({
@@ -107,27 +106,29 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             const filter = i => i.user.id === interaction.user.id;
             const collector = collectionMessage.createMessageComponentCollector({ filter, time: Timeout.Mins15 });//time: util.Timeout.Mins15
             collector.on('collect', async (i: MessageComponentInteraction) => {
-                for (const b of row1.components) {
+                const buttons = collectionMessage.components[0].components as ButtonComponent[];
+                let newRow1: ActionRowBuilder<ButtonBuilder> = new ActionRowBuilder;
+                for (let b of buttons) {
                     if (b.customId !== i.customId) {
-                        (b as MessageButton).setStyle('SUCCESS')
+                        newRow1.addComponents((ButtonBuilder.from(b as ButtonComponent).setStyle(ButtonStyle.Success)))
                     }
                     else {
-                        (b as MessageButton).setStyle('PRIMARY')
+                        newRow1.addComponents((ButtonBuilder.from(b as ButtonComponent).setStyle(ButtonStyle.Primary)))
                     }
 
                 }
                 await i.deferUpdate();
                 switch (i.customId) {
                     case 'rare': {
-                        await i.editReply({ embeds: [rareEmbed], components: [row1] })
+                        await i.editReply({ embeds: [rareEmbed], components: [newRow1] })
                         break;
                     }
                     case 'epic': {
-                        await i.editReply({ embeds: [epicEmbed], components: [row1] })
+                        await i.editReply({ embeds: [epicEmbed], components: [newRow1] })
                         break;
                     }
                     case 'lego': {
-                        await i.editReply({ embeds: [legoEmbed], components: [row1] })
+                        await i.editReply({ embeds: [legoEmbed], components: [newRow1] })
                         break;
                     }
                 }
@@ -135,7 +136,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             collector.on('end', async (x) => {
                 for (const r of collectionMessage.components) {
                     for (const c of r.components) {
-                        c.setDisabled(true);
+                        ButtonBuilder.from(c as ButtonComponent).setDisabled(true);
                     }
                 }
                 await collectionMessage.edit({ components: collectionMessage.components })
@@ -143,7 +144,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             });
         }
         else {
-            const noData: MessageEmbed = new MessageEmbed({
+            const noData: EmbedBuilder = new EmbedBuilder({
                 description: `You haven't used /summon yet?  Your clearly not a shard-a-holic.  Please try /claim to get some tokens, then /summon to pull some (simulated) shards!`
             })
             await interaction.followUp(

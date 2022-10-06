@@ -1,6 +1,4 @@
-import { bold, SlashCommandBuilder } from '@discordjs/builders';
-import exp from 'constants';
-import discord, { CommandInteraction, EmbedField, Message, MessageAttachment, MessageEmbed } from 'discord.js';
+import discord, { CommandInteraction, EmbedField, Message, AttachmentBuilder, EmbedBuilder, bold, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { logger, mongoClient } from '../arbi';
 import { champsByRarity, createTenPullImage } from '../general/imageUtils';
 import { IChampPull, IShardData, Mercy, msToTime } from '../general/IShardData';
@@ -18,7 +16,7 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setDefaultPermission(true)
     .setDescription('Simulate shard pulls with tokens you have gathered with /claim!');
 
-export async function execute(interaction: CommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
     await interaction.deferReply();
 
     let collection = await connectToCollection('user_shard_data', mongoClient);
@@ -92,7 +90,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
 
     if (shardsToPull > 100) shardsToPull = 100;
     if (userData.tokens < shardsToPull) {
-        const notEnough = new MessageEmbed(
+        const notEnough = new EmbedBuilder(
             {
                 description: `You don't have enough tokens to pull that many shards! You can claim again in ${msToTime(waitTime)}`,
                 fields: [
@@ -227,26 +225,26 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         if (rarityList.legendaries.length > 0) {
             let champ;
             let id;
-            try{
-            for (const r of rarityList.legendaries) {
-                 id = parseInt(r.champ) + 6;
-                 champ = champs.find(x => x.id === id);
-                legosField.value += `${champ.name}, `;
-                if (userData.champions.legendary.length !== 0 && userData.champions.legendary.find(x => x.name === champ.name)) {
-                    userData.champions.legendary.find(x => x.name === champ.name).number++
-                }
-                else {
-                    userData.champions.legendary.push({
-                        affinity: champ.affinity,
-                        name: champ.name,
-                        number: 1
-                    })
+            try {
+                for (const r of rarityList.legendaries) {
+                    id = parseInt(r.champ) + 6;
+                    champ = champs.find(x => x.id === id);
+                    legosField.value += `${champ.name}, `;
+                    if (userData.champions.legendary.length !== 0 && userData.champions.legendary.find(x => x.name === champ.name)) {
+                        userData.champions.legendary.find(x => x.name === champ.name).number++
+                    }
+                    else {
+                        userData.champions.legendary.push({
+                            affinity: champ.affinity,
+                            name: champ.name,
+                            number: 1
+                        })
+                    }
                 }
             }
-        }
-        catch{
-            console.log(champ, id)
-        }
+            catch {
+                console.log(champ, id)
+            }
         }
         userData.tokens = userData.tokens - shardsToPull;
         const collection2 = await connectToCollection('user_shard_data', mongoClient);
@@ -263,11 +261,11 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 }
 
             });
-        
+
         raresField.value = clipText(raresField.value.slice(0, raresField.value.length - 2))
         epicsField.value = clipText(epicsField.value.slice(0, epicsField.value.length - 2))
         legosField.value = clipText(legosField.value.slice(0, legosField.value.length - 2))
-        let embed: MessageEmbed;
+        let embed: EmbedBuilder;
         let legoAnimation: Message;
         if (champsPulled.find(x => x.rarity === 'legendary')) {
             legoAnimation = await interaction.followUp('https://media.discordapp.net/attachments/558596438452600855/644460171937972227/legpull.gif') as Message;
@@ -276,9 +274,9 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             try {
                 const tenPullImage = await createTenPullImage(champsPulled);
                 const id = uuidv1();
-                const imageFile: MessageAttachment = new MessageAttachment(Buffer.from(tenPullImage), `${id}.png`);
+                const imageFile: AttachmentBuilder = new AttachmentBuilder(Buffer.from(tenPullImage), { name: `${id}.png` });
 
-                embed = new MessageEmbed(
+                embed = new EmbedBuilder(
                     {
                         image: {
                             url: `attachment://${id}.png`
@@ -287,13 +285,13 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                     }
                 )
                 if (rarityList.legendaries.length > 0) {
-                    embed.fields.push(legosField)
+                    embed.data.fields.push(legosField)
                 }
                 if (rarityList.epics.length > 0) {
-                    embed.fields.push(epicsField)
+                    embed.data.fields.push(epicsField)
                 }
                 if (rarityList.rares.length > 0) {
-                    embed.fields.push(raresField)
+                    embed.data.fields.push(raresField)
                 }
                 setTimeout(async () => {
                     if (legoAnimation) {
@@ -312,8 +310,8 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 if (legoAnimation) {
                     await legoAnimation.delete();
                 }
-                const errorEmbed = new MessageEmbed();
-                errorEmbed.description = `An error Has occured, we have logged it and are looking into it.\n ${err}`;
+                const errorEmbed = new EmbedBuilder();
+                errorEmbed.setDescription(`An error Has occured, we have logged it and are looking into it.\n ${err}`);
                 await interaction.followUp({
                     allowedMentions: {
                         repliedUser: false
@@ -323,19 +321,19 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
 
         }
         else {
-            embed = new MessageEmbed(
+            embed = new EmbedBuilder(
                 {
                     description: `Here is what you pulled from ${shardsToPull} ${shardType} shard(s):`
                 }
             )
             if (rarityList.legendaries.length > 0) {
-                embed.fields.push(legosField)
+                embed.data.fields.push(legosField)
             }
             if (rarityList.epics.length > 0) {
-                embed.fields.push(epicsField)
+                embed.data.fields.push(epicsField)
             }
             if (rarityList.rares.length > 0) {
-                embed.fields.push(raresField)
+                embed.data.fields.push(raresField)
             }
             setTimeout(async () => {
                 if (legoAnimation) {

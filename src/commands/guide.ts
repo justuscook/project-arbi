@@ -1,5 +1,4 @@
-import { SlashCommandBuilder, bold, userMention, Embed, codeBlock } from '@discordjs/builders';
-import { CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbed, MessageEmbedImage, User } from 'discord.js';
+import { CommandInteraction, Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, TextChannel, User, bold, ButtonStyle, codeBlock, SlashCommandBuilder, ChatInputCommandInteraction, Colors, MessageComponentBuilder, MessageActionRowComponentBuilder } from 'discord.js';
 import { IMessageEmbeds } from '../general/util'
 import * as util from '../general/util';
 import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches, mongoClient } from '../arbi';
@@ -26,17 +25,17 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 */
     .setDescription('Search for guides by champion or dungeon name.')
 
-export async function execute(interaction: CommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
     await interaction.deferReply();
     /*
     const commandText = await interaction.toString();
-    const commandTextEmbed = new MessageEmbed()
+    const commandTextEmbed = new EmbedBuilder()
         .setAuthor({ name: commandText })
         .setDescription('Processing your command now!');
     const commandTextMessage = await interaction.followUp({ embeds: [commandTextEmbed] });
     */
-    let row1: MessageActionRow = new MessageActionRow;
-    let row2: MessageActionRow = new MessageActionRow;
+    let row1: ActionRowBuilder<MessageActionRowComponentBuilder> = new ActionRowBuilder<MessageActionRowComponentBuilder>;
+    let row2: ActionRowBuilder<MessageActionRowComponentBuilder> = new ActionRowBuilder<MessageActionRowComponentBuilder>;
     const embeds: IMessageEmbeds[] = [];
     let userToDM: User = interaction.options.getUser('user_to_dm');
     const originalUser: User = interaction.user;
@@ -60,42 +59,42 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     }
     //console.log(input);
     try {
-        const inbox = new MessageActionRow()
+        const inbox = new ActionRowBuilder<MessageActionRowComponentBuilder>()
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setLabel('Inbox')
-                    .setStyle('LINK')
+                    .setStyle(ButtonStyle.Link)
                     .setURL(`https://discord.com/channels/@me/${await (await interaction.user.createDM()).id}`)
             );
-        
+
         const collection = await util.connectToCollection('guides', mongoClient);
         const guides = await collection.find<util.IGuide>({}).toArray();
-        
+
         const phrases = ['early game', 'mid game', 'late game', 'late', 'mid', 'early', 'late game+', 'late game +', 'late game guide', 'late game+ guide'];
         let found: util.IGuide[];
 
         if ((input.toLowerCase().includes('list') || input === '') && !input.toLowerCase().includes('diabolist')) {
             const listStings = util.getGuideList(guides);
-            const genGuidesEmbed = new MessageEmbed()
+            const genGuidesEmbed = new EmbedBuilder()
                 .setTitle('List of general game guides by title:')
                 .setDescription(codeBlock(listStings[2]))
-                .setColor('GOLD');
+                .setColor(Colors.Gold);
 
-            const champEmbed1 = new MessageEmbed()
+            const champEmbed1 = new EmbedBuilder()
                 .setTitle('List of all champion guides:')
                 .setDescription(codeBlock(listStings[0]))
-                .setColor('GOLD');
-            const champEmbed2 = new MessageEmbed()
+                .setColor(Colors.Gold);
+            const champEmbed2 = new EmbedBuilder()
                 .setTitle('List of champion guides continued:')
                 .setDescription(codeBlock(listStings[1]))
-                .setColor('GOLD');
+                .setColor(Colors.Gold);
             if (canShow && showInServer) {
                 const listMessage = await interaction.followUp({ embeds: [genGuidesEmbed, champEmbed1, champEmbed2] });
                 await util.delayDeleteMessages([listMessage as Message]);
                 return true;
             }
             else {
-                const dmEmbed = new MessageEmbed()
+                const dmEmbed = new EmbedBuilder()
                     .setDescription(`${interaction.user.toString()}${(showInServer) ? `You can\'t show commands in this server.` : ''} Guide(s) sent, check your "Inbox"!`)
                     .setAuthor({ name: `/${interaction.commandName} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}` })
 
@@ -123,24 +122,22 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         }
         const first10orLess: util.IGuide[] = found.filter(x => found.indexOf(x) < 10)
 
-        const blackSlideEmbed: MessageEmbed = new MessageEmbed()
+        const blackSlideEmbed: EmbedBuilder = new EmbedBuilder()
             .setTitle('Blank slide')
             .setDescription('This is a short guide, nothing in this section!');
-        const botblackSlideEmbed: MessageEmbed = new MessageEmbed()
+        const botblackSlideEmbed: EmbedBuilder = new EmbedBuilder()
             .setTitle('Blank slide')
             .setDescription('This is a short guide, nothing in this section!');
         const guideEmbeds: IMessageEmbeds[] = [];
         first10orLess.sort(util.SortByOrder('order'));
         for (const f of first10orLess) {
-            const embeds: MessageEmbed[] = [];
+            const embeds: EmbedBuilder[] = [];
             for (const d of f.data) {
-                const embed = new MessageEmbed();
-                const image: MessageEmbedImage = {
-                    url: d.image,
-                }
-                if (d.image !== undefined) embed.image = image;
-                embed.title = d.label;
-                embed.description = d.desc;
+                const embed = new EmbedBuilder();
+                const image: string = d.image;
+                if (d.image !== undefined) embed.setImage(image);
+                embed.setTitle(d.label);
+                embed.setDescription(d.desc);
 
                 embeds.push(embed)
             }
@@ -169,7 +166,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             if (!embeds[2]) {
                 embeds[2] = botblackSlideEmbed;
             }
-            embeds[2].footer = {
+            embeds[2].data.footer = {
                 text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`
             }
             guideEmbeds.push({
@@ -182,21 +179,21 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
 
         for (let a = 1; a <= ((first10orLess.length > 5) ? 5 : first10orLess.length); a++) {
             row1.addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId(a.toString())
                     .setLabel(a.toString())
-                    .setStyle('SUCCESS')
+                    .setStyle(ButtonStyle.Success)
             )
         };
-        (row1.components[0] as MessageButton).setStyle('PRIMARY')
+        (row1.components[0] as ButtonBuilder).setStyle(ButtonStyle.Primary)
 
         if (first10orLess.length > 5) {
             for (let a = 6; a <= first10orLess.length; a++) {
                 row2.addComponents(
-                    new MessageButton()
+                    new ButtonBuilder()
                         .setCustomId(a.toString())
                         .setLabel(a.toString())
-                        .setStyle('SUCCESS')
+                        .setStyle(ButtonStyle.Success)
                 )
             };
             if (userToDM !== null && canDM) {
@@ -226,7 +223,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 const topCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
-                const dmEmbed = new MessageEmbed()
+                const dmEmbed = new EmbedBuilder()
                     .setDescription(`${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`)
 
 
@@ -267,7 +264,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 const topCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].topEmbed] });
                 const midCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].midEmbed] });
                 const botCommandMessage = await interaction.user.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
-                const dmEmbed = new MessageEmbed()
+                const dmEmbed = new EmbedBuilder()
                     .setDescription(`${interaction.user.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''}  Guide(s) sent, check your "Inbox"!`)
                     .setAuthor({ name: `/${interaction.commandName} input: ${ogInput}${(showInServer) ? ` show_in_server: ${showInServer.toString()}` : ''}${(userToDM) ? ` show_in_server: ${userToDM.toString()}` : ''}` })
 
@@ -283,8 +280,8 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         }
     }
     catch (err) {
-        console.log(err);
-        interaction.followUp('There was an error in your guide search, it is logged and we are looking into it!  Please use /support and ask for help with your issue if it keeps happening.');
+        const messageText = await util.handelSlashCommandError(err, interaction.user, data.name, interaction.channel as TextChannel)
+        interaction.followUp({ content: messageText })
         return false;
     }
 }

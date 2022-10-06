@@ -1,4 +1,4 @@
-import { Message, MessageActionRow, MessageEmbed, MessageSelectMenu } from "discord.js";
+import { Message, ActionRowBuilder, EmbedBuilder,  MessageActionRowComponentBuilder, SelectMenuBuilder, Colors, ComponentType } from "discord.js";
 import { logger, mongoClient } from "../arbi";
 import { IBuffDebuff } from "../general/IBuffDebuff";
 import { clipText, connectToCollection, IChampionInfo, ICommandInfo } from "../general/util";
@@ -7,9 +7,9 @@ const commandFile: ICommandInfo = {
     name: 'skill_search',
     execute: async (message: Message, input?: string): Promise<boolean> => {
         try {
-            const selectMenu = new MessageActionRow()
+            const selectMenu = new ActionRowBuilder<MessageActionRowComponentBuilder>()
                 .addComponents(
-                    new MessageSelectMenu()
+                    new SelectMenuBuilder()
                         .setCustomId('skill_number')
                         .setMaxValues(1)
                         .setPlaceholder('Choose a skill number.')
@@ -34,7 +34,7 @@ const commandFile: ICommandInfo = {
                                 value: '4'
                             }])
                 )
-            const buffOrDebuffMenu = new MessageSelectMenu()
+            const buffOrDebuffMenu = new SelectMenuBuilder()
                 .setCustomId('buff_or_debuff')
                 .addOptions([
                     {
@@ -47,8 +47,8 @@ const commandFile: ICommandInfo = {
                     }
                 ])
     
-            const buffsMenu = new MessageSelectMenu().setCustomId('buffs').setPlaceholder('Choose a buff');
-            const debuffsMenu = new MessageSelectMenu().setCustomId('debuffs').setPlaceholder('Choose a debuff');
+            const buffsMenu = new SelectMenuBuilder().setCustomId('buffs').setPlaceholder('Choose a buff');
+            const debuffsMenu = new SelectMenuBuilder().setCustomId('debuffs').setPlaceholder('Choose a debuff');
     
             
             let collection = await connectToCollection('buffs_debuffs', mongoClient);
@@ -72,37 +72,37 @@ const commandFile: ICommandInfo = {
                 ])
             }
             //selectMenu.addComponents(buffsMenu,debuffsMenu);
-            const embed: MessageEmbed = new MessageEmbed({
+            const embed: EmbedBuilder = new EmbedBuilder({
                 title: "Choose the skill number to search:",
-                color: 'FUCHSIA'
+                color: Colors.Fuchsia
             })
             let skillNumber = '';
             let buffOrDebuff = '';
             let chosenEffect = '';
     
             const selectMessage = await message.reply({ embeds: [embed], components: [selectMenu] });
-            const collector = message.channel.createMessageComponentCollector({ componentType: 'SELECT_MENU', filter: (x) => x.user === message.author });
+            const collector = message.channel.createMessageComponentCollector({ componentType: ComponentType.SelectMenu, filter: (x) => x.user === message.author });
             collector.on('collect', async (i) => {
                 switch (i.customId) {
                     case 'skill_number': {
                         skillNumber = i.values[0]
                         selectMenu.setComponents([buffOrDebuffMenu])
-                        embed.title = 'Would you like to look for a buff or debuff?';
-                        embed.setColor('BLUE')
+                        embed.setTitle('Would you like to look for a buff or debuff?');
+                        embed.setColor(Colors.Blue)
                         await i.update({ embeds: [embed], components: [selectMenu] });
                         break;
                     }
                     case 'buff_or_debuff': {
                         if (i.values[0] === 'buff') {
                             selectMenu.setComponents([buffsMenu])
-                            embed.title = 'Choose a buff to look up:';
-                            embed.setColor('ORANGE')
+                            embed.setTitle('Choose a buff to look up:');
+                            embed.setColor(Colors.Orange)
                             await i.update({ embeds: [embed], components: [selectMenu] });
                         }
                         else {
                             selectMenu.setComponents([debuffsMenu])
-                            embed.title = 'Choose a debuff to look up:';
-                            embed.setColor('YELLOW')
+                            embed.setTitle('Choose a debuff to look up:');
+                            embed.setColor(Colors.Yellow)
                             await i.update({ embeds: [embed], components: [selectMenu] });
                         }
                         buffOrDebuff = i.values[0];
@@ -119,8 +119,8 @@ const commandFile: ICommandInfo = {
             })
             collector.on('end', async (e) => {
                 if (chosenEffect === '') {
-                    embed.title = `You didn't respond with enough info in time, try again later.`;
-                    embed.setColor('RED');
+                    embed.setTitle(`You didn't respond with enough info in time, try again later.`);
+                    embed.setColor(Colors.Red);
                     selectMessage.edit({ embeds: [embed], components: [] })
                 }
                 else {
@@ -154,9 +154,9 @@ const commandFile: ICommandInfo = {
                     for (const f of foundChamps) {
                         foundChampsNames += `${f.name}, `;
                     }
-                    embed.setColor('GREEN')
-                    embed.title = `Here are the champions I found with ${chosenEffect} on ${(skillNumber === 'any') ? `any skill` : `their A${skillNumber}`}:`
-                    embed.description = clipText(foundChampsNames);
+                    embed.setColor(Colors.Green)
+                    embed.setTitle(`Here are the champions I found with ${chosenEffect} on ${(skillNumber === 'any') ? `any skill` : `their A${skillNumber}`}:`)
+                    embed.setDescription(clipText(foundChampsNames));
                     await selectMessage.edit({ embeds: [embed] , components: []})
                 }
             })

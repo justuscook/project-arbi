@@ -1,5 +1,4 @@
-import { bold, userMention } from "@discordjs/builders";
-import { Message, MessageEmbed } from "discord.js";
+import { Message, EmbedBuilder, userMention } from "discord.js";
 import { client, leaderboard } from "../arbi";
 import { connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
 import fs from 'fs';
@@ -15,7 +14,7 @@ const commandFile: ICommandInfo = {
             }*/
             if (input === '') {
                 const commands = await client.application.commands.fetch();
-                const embed: MessageEmbed = new MessageEmbed({
+                const embed: EmbedBuilder = new EmbedBuilder({
                     description: `${userMention((await message.author.fetch()).id)} Here is a list of my commands!`,
                 });
                 const commandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith('.js'));
@@ -33,7 +32,7 @@ const commandFile: ICommandInfo = {
                     })
                     //console.lo
                 }
-                embed.fields.push(
+                embed.data.fields.push(
                     {
                         inline: false,
                         name: 'Command versions',
@@ -41,7 +40,7 @@ const commandFile: ICommandInfo = {
                     }
                 )
                 for (const c of commands) {
-                    embed.fields.push({
+                    embed.data.fields.push({
                         name: c[1].name,
                         value: `Description: ${c[1].description}`,
                         inline: false
@@ -55,12 +54,12 @@ const commandFile: ICommandInfo = {
             }
             else {
                 const commands = await client.application.commands.fetch();
-                const embed: MessageEmbed = new MessageEmbed({
+                const embed: EmbedBuilder = new EmbedBuilder({
                     description: `${userMention((await message.author.fetch()).id)} Here is help for ${input}!`,
                 });
                 const commandFiles = fs.readdirSync(__dirname + '//..//commands').filter(file => file.endsWith(`${input}.js`));
                 const command = require(__dirname + `//..//commands//${commandFiles[0]}`);
-                embed.fields.push(
+                embed.data.fields.push(
                     {
                         inline: false,
                         name: 'Command versions',

@@ -1,5 +1,4 @@
-import { bold, codeBlock, Embed, userMention } from "@discordjs/builders";
-import { Message, MessageActionRow, MessageButton, MessageEmbed, MessageEmbedImage, MessageReaction, ReplyMessageOptions, User } from "discord.js";
+import { Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, EmbedImageData, MessageReaction, BaseMessageOptions, TextChannel, User, ButtonStyle, codeBlock, Colors, bold, MessageActionRowComponentBuilder, ChannelType } from "discord.js";
 import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches, leaderboard, mongoClient } from "../arbi";
 import { connectToCollection, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide, IMessageEmbeds } from "../general/util";
 import * as util from "../general/util";
@@ -8,8 +7,8 @@ import { content } from "googleapis/build/src/apis/content";
 const commandFile: ICommandInfo = {
     name: 'guide',
     execute: async (message: Message, input?: string): Promise<boolean> => {
-        let row1: MessageActionRow = new MessageActionRow;
-        let row2: MessageActionRow = new MessageActionRow;
+        let row1 = new ActionRowBuilder<MessageActionRowComponentBuilder>;
+        let row2 = new ActionRowBuilder<MessageActionRowComponentBuilder>;
         let showInServer = false;
         const embeds: IMessageEmbeds[] = [];
         let userToDM: User;
@@ -17,7 +16,8 @@ const commandFile: ICommandInfo = {
         let canDM = await util.canDM(message);
         let canShow = await util.canShow(message);
         //let input = util.getUserInput(message.content);
-        let ogInput = message.content;
+        let ogInput = input;
+        //input = input.trimEnd().trimStart();
         if (input === null) input = 'list';
         if (input.toLowerCase().includes('show')) {
             input = util.removeShow(input).trimEnd().trimStart();
@@ -33,11 +33,11 @@ const commandFile: ICommandInfo = {
         }
         console.log(input);
         try {
-            const inbox = new MessageActionRow()
+            const inbox = new ActionRowBuilder<ButtonBuilder>()
                 .addComponents(
-                    new MessageButton()
+                    new ButtonBuilder()
                         .setLabel('Inbox')
-                        .setStyle('LINK')
+                        .setStyle(ButtonStyle.Link)
                         .setURL(`https://discord.com/channels/@me/${await (await message.author.createDM()).id}`)
                 );
             
@@ -49,19 +49,19 @@ const commandFile: ICommandInfo = {
 
             if ((input.toLowerCase().includes('list') || input === '') && !input.toLowerCase().includes('diabolist')) {
                 const listStings = util.getGuideList(guides);
-                const genGuidesEmbed = new MessageEmbed()
+                const genGuidesEmbed = new EmbedBuilder()
                     .setTitle('List of general game guides by title:')
                     .setDescription(codeBlock(listStings[2]))
-                    .setColor('GOLD');
+                    .setColor(Colors.Gold);
 
-                const champEmbed1 = new MessageEmbed()
+                const champEmbed1 = new EmbedBuilder()
                     .setTitle('List of all champion guides:')
                     .setDescription(codeBlock(listStings[0]))
-                    .setColor('GOLD');
-                const champEmbed2 = new MessageEmbed()
+                    .setColor(Colors.Gold);
+                const champEmbed2 = new EmbedBuilder()
                     .setTitle('List of champion guides continued:')
                     .setDescription(codeBlock(listStings[1]))
-                    .setColor('GOLD');
+                    .setColor(Colors.Gold);
                 if (canShow && showInServer) {
                     const listMessage = await message.reply({
                         allowedMentions: {
@@ -72,7 +72,7 @@ const commandFile: ICommandInfo = {
                     return true;
                 }
                 else {
-                    const dmEmbed = new MessageEmbed()
+                    const dmEmbed = new EmbedBuilder()
                         .setDescription(`${message.author.toString()}${(showInServer) ? `You can\'t show commands in this server.` : ''} Guide(s) sent, check your "Inbox"!`)
                     //.setAuthor({ name: `${ogInput}` })
 
@@ -111,24 +111,24 @@ const commandFile: ICommandInfo = {
             }
             const first10orLess: util.IGuide[] = found.filter(x => found.indexOf(x) < 10)
 
-            const blackSlideEmbed: MessageEmbed = new MessageEmbed()
+            const blackSlideEmbed: EmbedBuilder = new EmbedBuilder()
                 .setTitle('Blank slide')
                 .setDescription('This is a short guide, nothing in this section!');
-            const botblackSlideEmbed: MessageEmbed = new MessageEmbed()
+            const botblackSlideEmbed: EmbedBuilder = new EmbedBuilder()
                 .setTitle('Blank slide')
                 .setDescription('This is a short guide, nothing in this section!');
             const guideEmbeds: IMessageEmbeds[] = [];
             first10orLess.sort(util.SortByOrder('order'));
             for (const f of first10orLess) {
-                const embeds: MessageEmbed[] = [];
+                const embeds: EmbedBuilder[] = [];
                 for (const d of f.data) {
-                    const embed = new MessageEmbed();
-                    const image: MessageEmbedImage = {
-                        url: d.image,
+                    const embed = new EmbedBuilder();
+                    const image: EmbedImageData = {
+                        url: d.image
                     }
-                    if (d.image !== undefined) embed.image = image;
-                    embed.title = d.label;
-                    embed.description = d.desc;
+                    if (d.image !== undefined) embed.setImage(image.url);
+                    embed.setTitle( d.label);
+                    embed.setDescription( d.desc);
 
                     embeds.push(embed)
                 }
@@ -157,9 +157,10 @@ const commandFile: ICommandInfo = {
                 if (!embeds[2]) {
                     embeds[2] = botblackSlideEmbed;
                 }
-                embeds[2].footer = {
-                    text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`
-                }
+                embeds[2].setFooter({
+                    text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`                                    }
+                    
+                )
                 guideEmbeds.push({
                     topEmbed: embeds[0],
                     midEmbed: (embeds[1]) ? embeds[1] : blackSlideEmbed,
@@ -170,21 +171,21 @@ const commandFile: ICommandInfo = {
 
             for (let a = 1; a <= ((first10orLess.length > 5) ? 5 : first10orLess.length); a++) {
                 row1.addComponents(
-                    new MessageButton()
+                    new ButtonBuilder()
                         .setCustomId(a.toString())
                         .setLabel(a.toString())
-                        .setStyle('SUCCESS')
+                        .setStyle(ButtonStyle.Success)
                 )
             };
-            (row1.components[0] as MessageButton).setStyle('PRIMARY')
+            (row1.components[0] as ButtonBuilder).setStyle(ButtonStyle.Primary)
 
             if (first10orLess.length > 5) {
                 for (let a = 6; a <= first10orLess.length; a++) {
                     row2.addComponents(
-                        new MessageButton()
+                        new ButtonBuilder()
                             .setCustomId(a.toString())
                             .setLabel(a.toString())
-                            .setStyle('SUCCESS')
+                            .setStyle(ButtonStyle.Success)
                     )
                 };
                 if (userToDM && canDM) {
@@ -236,7 +237,7 @@ const commandFile: ICommandInfo = {
                     const topCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].topEmbed] });
                     const midCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].midEmbed] });
                     const botCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1, row2] });
-                    const dmEmbed = new MessageEmbed()
+                    const dmEmbed = new EmbedBuilder()
                         .setDescription(`${message.author.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''} I sent the guide I found to you, click the "Inbox" button below to check!`)
 
 
@@ -247,7 +248,7 @@ const commandFile: ICommandInfo = {
                     });
 
                     await util.guideButtonPagination(message.author.id, [topCommandMessage as Message, midCommandMessage as Message, botCommandMessage as Message], guideEmbeds);
-                    if (message.channel.type !== 'DM') await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
+                    if (message.channel.type !== ChannelType.DM) await util.delayDeleteMessages([dmAlert as Message], 60 * 1000, showInServer);
                     return true;
 
                 }
@@ -303,10 +304,10 @@ const commandFile: ICommandInfo = {
                     const topCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].topEmbed] });
                     const midCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].midEmbed] });
                     const botCommandMessage = await message.author.send({ embeds: [guideEmbeds[0].botEmbed], components: [row1] });
-                    const dmEmbed = new MessageEmbed()
+                    const dmEmbed = new EmbedBuilder()
                         .setDescription(`${message.author.toString()}${(showInServer) ? 'You can\'t show commands in this server.  ' : ''}  Guide(s) sent, check your "Inbox"!`)
                     //.setAuthor({ name: `${ogInput}` })
-                    if (message.channel.type !== 'DM') {
+                    if (message.channel.type !== ChannelType.DM) {
                         const dmAlert = await message.reply({
                             allowedMentions: {
                                 repliedUser: false
@@ -320,13 +321,9 @@ const commandFile: ICommandInfo = {
                 }
             }
         }
-        catch (err) {
-            await message.reply({
-                allowedMentions: {
-                    repliedUser: false
-                }, content: 'There was an error in your guide search, it is logged and we are looking into it!  Please use /support and ask for help with your issue if it keeps happening.'
-            });
-            console.log(err)
+        catch (err) {            
+            await util.handelError(err,message.author, commandFile.name,message.channel as TextChannel)
+            return false;
         }
     }
 }

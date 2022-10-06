@@ -1,5 +1,4 @@
-import { bold, userMention } from "@discordjs/builders";
-import { Message, MessageActionRow, MessageButton, MessageComponentInteraction, MessageEmbed } from "discord.js";
+import { Message, ActionRowBuilder, ButtonBuilder, MessageComponentInteraction, EmbedBuilder, ButtonStyle, Colors, MessageActionRowComponentBuilder, MessageComponentBuilder, ButtonComponent, ComponentType, ButtonInteraction, bold } from "discord.js";
 import { totalmem } from "os";
 import { mongoClient } from "../arbi";
 import { Champion, IShardData, msToTime } from "../general/IShardData";
@@ -11,16 +10,16 @@ const commandFile: ICommandInfo = {
         try {
             const collection = await connectToCollection('user_shard_data', mongoClient);
             let userData: IShardData = await collection.findOne<IShardData>({ userID: message.author.id });
-            const embeds: MessageEmbed[] = [];
-            let rareEmbed: MessageEmbed;
-            let epicEmbed: MessageEmbed;
-            let legoEmbed: MessageEmbed;
+            const embeds: EmbedBuilder[] = [];
+            let rareEmbed: EmbedBuilder;
+            let epicEmbed: EmbedBuilder;
+            let legoEmbed: EmbedBuilder;
             const now: Date = new Date(Date.now());
             const midnight = new Date;
             midnight.setUTCHours(24, 0, 0, 0);
             const waitTime = midnight.getTime() - now.getTime();
             if (userData) {
-                rareEmbed = new MessageEmbed({
+                rareEmbed = new EmbedBuilder({
                     fields: [
                         {
                             name: 'Tokens:',
@@ -39,7 +38,7 @@ const commandFile: ICommandInfo = {
                     description: `Info about your collection and rares:`
                 })
 
-                epicEmbed = new MessageEmbed({
+                epicEmbed = new EmbedBuilder({
                     fields: [
                         {
                             name: 'Tokens:',
@@ -54,11 +53,11 @@ const commandFile: ICommandInfo = {
                             value: (userData.champions.rare.length > 0) ? getCollectionText(userData.champions.epic) : `You don't have any epics?  Have you tried a sacred shard lol...`
                         }
                     ],
-                    color: 'PURPLE',
+                    color: Colors.Purple,
                     description: `Info about your collection and epics:`
                 })
 
-                legoEmbed = new MessageEmbed({
+                legoEmbed = new EmbedBuilder({
                     fields: [
                         {
                             name: 'Tokens:',
@@ -73,23 +72,23 @@ const commandFile: ICommandInfo = {
                             value: (userData.champions.rare.length > 0) ? getCollectionText(userData.champions.legendary) : `You don't have any legos?  Try /summon sacred 100...`
                         }
                     ],
-                    color: 'GOLD',
+                    color: Colors.Gold,
                     description: `Info about your collection and legendaries:`
                 })
-                let row1: MessageActionRow = new MessageActionRow;
+                let row1: ActionRowBuilder<MessageActionRowComponentBuilder> = new ActionRowBuilder;
                 row1.addComponents(
-                    new MessageButton()
+                    new ButtonBuilder()
                         .setCustomId('lego')
                         .setLabel('Legendaries')
-                        .setStyle('PRIMARY'),
-                    new MessageButton()
+                        .setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder()
                         .setCustomId('epic')
                         .setLabel('Epics')
-                        .setStyle('SUCCESS'),
-                    new MessageButton()
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
                         .setCustomId('rare')
                         .setLabel('Rares')
-                        .setStyle('SUCCESS')
+                        .setStyle(ButtonStyle.Success)
                 )
 
                 const collectionMessage = await message.reply({
@@ -103,11 +102,11 @@ const commandFile: ICommandInfo = {
                 const collector = collectionMessage.createMessageComponentCollector({ filter, time: Timeout.Mins15 });//time: util.Timeout.Mins15
                 collector.on('collect', async (i: MessageComponentInteraction) => {
                     for (const b of row1.components) {
-                        if (b.customId !== i.customId) {
-                            (b as MessageButton).setStyle('SUCCESS')
+                        if (b.data !== i.customId) {
+                            (b as ButtonBuilder).setStyle(ButtonStyle.Success)
                         }
                         else {
-                            (b as MessageButton).setStyle('PRIMARY')
+                            (b as ButtonBuilder).setStyle(ButtonStyle.Primary)
                         }
 
                     }
@@ -128,17 +127,19 @@ const commandFile: ICommandInfo = {
                     }
                 })
                 collector.on('end', async (x) => {
-                    for (const r of collectionMessage.components) {
-                        for (const c of r.components) {
-                            c.setDisabled(true);
-                        }
+                    for (const b of row1.components) {
+                        /*
+                        const row = ActionRowBuilder.from(message.components[0]);
+row.components[0].setDisabled();
+message.edit({ components: [row] });*/
+                        (b as ButtonBuilder).setDisabled(true)//need to test
                     }
                     await collectionMessage.edit({ components: collectionMessage.components })
 
                 });
             }
             else {
-                const noData: MessageEmbed = new MessageEmbed({
+                const noData: EmbedBuilder = new EmbedBuilder({
                     description: `You haven't used /summon yet?  Your clearly not a shard-a-holic.  Please try /claim to get some tokens, then /summon to pull some (simulated) shards!`
                 })
                 await message.reply(

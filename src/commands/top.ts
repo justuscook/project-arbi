@@ -1,6 +1,4 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import exp from 'constants';
-import discord, { CommandInteraction, MessageEmbed } from 'discord.js';
+import discord, { CommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { logger } from '../arbi';
 import { IShardData, Mercy, msToTime } from '../general/IShardData';
 import { clipText, connectToCollection } from '../general/util';
@@ -35,7 +33,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
             }, sort: { orderBySumValue: -1 }, limit: 5
         }).toArray()*/
 
-        const embed: MessageEmbed = new MessageEmbed(
+        const embed: EmbedBuilder = new EmbedBuilder(
             {
                 description: clipText(`Top 25 summon users (based on shards "pulled"):\n${topText}`)
             }
@@ -52,7 +50,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
     }
     catch (err) {
         console.log(err);
-        const errEmbed: MessageEmbed = new MessageEmbed({
+        const errEmbed: EmbedBuilder = new EmbedBuilder({
             description: `There was an error with the command, it is logged and we will look into it!`
         })
         interaction.followUp(

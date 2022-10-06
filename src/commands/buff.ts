@@ -1,5 +1,5 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, MessageEmbed } from 'discord.js';
+
+import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { logger, mongoClient } from '../arbi';
 import { IBuffDebuff } from '../general/IBuffDebuff';
 import { connectToCollection, fuzzySearch } from '../general/util';
@@ -9,11 +9,11 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('buff')
     .addStringOption(option => option
         .setName('input')
-        .setDescription('Enter the name of the buff/debuff you would liek to search for.')
+        .setDescription('Enter the name of the buff/debuff you would like to search for.')
         .setRequired(true))
     .setDefaultPermission(true)    
     .setDescription('Search for a given buff/debuff definition from the in game FAQ.');
-export async function execute(interaction: CommandInteraction) : Promise<boolean>{
+export async function execute(interaction: ChatInputCommandInteraction) : Promise<boolean>{
     await interaction.deferReply();
     try {
         
@@ -21,7 +21,7 @@ export async function execute(interaction: CommandInteraction) : Promise<boolean
         const buffs = await collection.find<IBuffDebuff>({}).toArray();
         
         const searchText = interaction.options.getString('input');
-        const embed: MessageEmbed = new MessageEmbed();
+        const embed: EmbedBuilder = new EmbedBuilder();
         const found: IBuffDebuff[] = fuzzySearch(buffs,searchText,['name']);
         if(found.length > 0){
             embed.setDescription(found[0].desc)

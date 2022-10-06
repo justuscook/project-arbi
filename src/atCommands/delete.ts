@@ -1,5 +1,4 @@
-import { bold, userMention } from "@discordjs/builders";
-import { Message } from "discord.js";
+import { bold, Message, userMention } from "discord.js";
 import { mongoClient } from "../arbi";
 import { connectToCollection, getInput, ICommandInfo } from "../general/util";
 

@@ -1,6 +1,4 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import exp from 'constants';
-import discord, { CommandInteraction, MessageEmbed } from 'discord.js';
+import discord, { Colors, CommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { logger } from '../arbi';
 
 export const registerforTesting = false;
@@ -11,8 +9,8 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction) : Promise<boolean>{
     await interaction.deferReply();
     try {
-        const embed: MessageEmbed = new MessageEmbed({
-            color: 'GOLD',
+        const embed: EmbedBuilder = new EmbedBuilder({
+            color: Colors.Gold,
             description: `If you need help with ${interaction.client.application.name} or just want to chat [join our support server](https://discord.gg/c5cz9P784j)`
         })
         await interaction.followUp({ embeds: [embed] });

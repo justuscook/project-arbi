@@ -1,11 +1,10 @@
-import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, Intents, ApplicationCommandResolvable, Util, TextChannel, User, Message, Interaction, MessageEmbed, GuildChannel, Role } from 'discord.js';
+import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, ApplicationCommandResolvable, TextChannel, User, Message, Interaction, EmbedBuilder, GuildChannel, Role, Partials, GatewayIntentBits, userMention, PermissionsBitField, PermissionFlagsBits, REST, Routes, ChatInputCommandInteraction } from 'discord.js';
 import fs from 'fs';
 import express, { Response, Request, response } from 'express';
 import { clientId, testClientId, guildIDs, token, testToken } from './config.json';
-import { connectToCollection, connectToDB, Data, getAuthToken, getLeaderboard, getSpreadSheetValues, getTop, guidesSheetID, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
+import { connectToCollection, connectToDB, Data, getAuthToken, getLeaderboard, getSpreadSheetValues, getTop, guidesSheetID, handelError, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
 import './ws-polyfill.js'
 import { uploadImage } from './general/util';
-import { userMention } from '@discordjs/builders';
 import https from 'https';
 import http from 'http';
 import tracer from 'tracer';
@@ -39,20 +38,18 @@ export const logger = tracer.dailyfile({
     dateformat: 'mm/dd/yyyy HH:MM'
 
 });
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9');
 
 export const client: any = new Client({
     intents:
         [
-            Intents.FLAGS.GUILDS,
-            Intents.FLAGS.GUILD_MESSAGES,
-            Intents.FLAGS.DIRECT_MESSAGES,
-            Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-            Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
+            GatewayIntentBits.Guilds,
+            GatewayIntentBits.GuildMessages,
+            GatewayIntentBits.DirectMessages,
+            GatewayIntentBits.GuildMessageReactions,
+            GatewayIntentBits.DirectMessageReactions
         ],
     partials: [
-        'CHANNEL','REACTION','MESSAGE'
+        Partials.Channel, Partials.Reaction, Partials.Message
     ]
 });
 const app = express();
@@ -111,6 +108,9 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
         tag: (dungeonGuide) ? (guideResponse.data[7]) ? [tags[0], 'dungeon', 'champion', ...tags.slice(1)] : [guideResponse.data[5], 'dungeon'] : [tags[0], 'champion'],
         title: guideResponse.data[4],
         data: []
+    }
+    if (tags[0].toLowerCase() === 'general') {
+        guide.tag = [tags[0].toLowerCase()];
     }
     guide.tag = guide.tag.filter(x => x !== undefined);
 
@@ -175,7 +175,7 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
         return;
     }
     await updateFormat(guideResponse.sheetId, guideResponse.range, auth);
-    
+
     const collection = await connectToCollection('guides', mongoClient);
     const guides = await collection.updateOne(
         { title: guide.title },
@@ -184,10 +184,10 @@ app.post('/guideUpdate', async (req: Request, res: Response) => {
         async (err: any, result: any) => {
             if (err) {
                 await chan.send(`╯︿╰ The guide submission/update failed.\n${err}`)
-                
+
             }
             else {
-                
+
             }
         });
 
@@ -255,17 +255,24 @@ client.once('ready', async () => {
 
 
 client.on('messageCreate', async (message: Message) => {
-    if(message.author.bot) return;
+    if (message.author.bot) return;
 
     if (message.content.includes("@here") || message.content.includes("@everyone")) return;
     let botRole: Role;
     if (message.inGuild()) {
         botRole = message.guild.roles.botRoleFor(client.user.id)
         if (!message.mentions.roles.has(botRole.id) && !message.mentions.has(client.user.id)) return;
-    }   
+    }
 
-    const commandName = message.content.toLowerCase().split(' ')[1];
-    const input = message.content.split(' ').slice(2).join(' ');
+    let commandName = message.content.toLowerCase().split(' ')[1];
+    let input: string;
+    if (commandName == '') {
+        commandName = message.content.toLowerCase().split(' ')[2];
+        input = message.content.split(' ').slice(3).join(' ').trimEnd().trimStart();
+    }
+    else {
+        input = message.content.split(' ').slice(2).join(' ').trimEnd().trimStart();
+    }
     const command = client.atCommands.get(commandName)
     console.log(client.atCommands)
     if (!command) return;
@@ -286,6 +293,7 @@ client.on('messageCreate', async (message: Message) => {
             await errorChan.send(`${await client.users.fetch('269643701888745474')}Error in ${commandName} check the bot logs!`);
         }
     } catch (error) {
+
         logger.error(error);
         console.log(`$Error in {commandName}:\n${error}`)
         const errorChan: TextChannel = await client.channels.fetch('958715861743579187');
@@ -297,8 +305,8 @@ client.on('messageCreate', async (message: Message) => {
  * Command/Interaction handler
  */
 
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isCommand() || !(interaction.isContextMenu)) return;
+client.on('interactionCreate', async (interaction )=> {
+    if (!interaction.isChatInputCommand()) return;
 
     const command: any = client.commands.get(interaction.commandName);
 
@@ -314,7 +322,7 @@ client.on('interactionCreate', async interaction => {
         else {
             AddCommandToTotalFailedCommands(command.data.name);
             const errorChan: TextChannel = await client.channels.fetch('958715861743579187');
-            await errorChan.send(`${await client.user.fetch('269643701888745474')}Error in ${command.data.name} check the bot logs!`);
+            await errorChan.send(`${await client.user.fetch('269643701888745474')}Error in ${command.data.name}, check the logs!`);
         }
     } catch (error) {
         logger.error(error);
@@ -325,6 +333,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 function connectBot() {
+
     axios({
         url: 'https://api.ipify.org?format=json',
         method: 'GET',
@@ -338,7 +347,7 @@ function connectBot() {
 
         client.login(TOKEN);
     })
-
+    //client.login(TOKEN);
 }
 
 connectBot();
@@ -468,7 +477,7 @@ async function deployCommands() {
             }
             console.log(`Successfully registered application commands globally!`);
             for (const g of guildIDs) {
-                const response = await rest.put(
+                const response: any = await rest.put(
                     Routes.applicationGuildCommands(CLIENTID, g),
                     { body: commands },
                 );
@@ -477,11 +486,12 @@ async function deployCommands() {
                 for (const r of response) {
                     const command = await guild?.commands.fetch(r.id);
                     const commandFile = require(__dirname + `/commands/${r.name}`);
-
-                    if (command.defaultPermission === false) {
-                        const permissions = commandFile.permissions
-                        await command.permissions.set({ permissions });
-                    }
+                    /*
+                                        if (command.defaultMemberPermissions.has(PermissionsBitField.Flags.UseApplicationCommands)) {
+                                            const permissions = commandFile.permissions
+                                            await command.permissions.set({ permissions });
+                                        }
+                                        */
                 }
                 //console.log(response2)
                 console.log(`Successfully registered application commands in ${guild.name}.`);

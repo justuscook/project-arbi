@@ -1,0 +1,127 @@
+[
+    {
+        "name": "Brimstone",
+        "tag": ["brimstone", "brim","stone"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Brimstone.png"
+    },
+    {
+        "name": "Chainbreaker",
+        "tag": ["chainbreaker", "chain", "breaker"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Chainbreaker.png"
+    },
+    {
+        "name": "Commanding Presence",
+        "tag": ["commanding pressence", "commanding","pressence"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Carapace.png"
+    },
+    {
+        "name": "Cruelty",
+        "tag": ["cruelty"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Cruelty.png"
+    },
+    {
+        "name": "Crushing Rend",
+        "tag": ["crushing rend","crushing","rend"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Crushing-Rend.png"
+    },
+    {
+        "name": "Dark Resolve",
+        "tag": ["dark resolve","dark","resolve"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Dark-Resolve.png"
+    },
+    {
+        "name": "Faultless Defense",
+        "tag": ["faultless defense", "faultless", "defense"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Faultless-Defense.png"
+    },
+    {
+        "name": "Heavencast",
+        "tag": ["heavencast"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Heavencast.png"
+    },
+    {
+        "name": "Hero's Soul",
+        "tag": ["hero's soul", "hero's", "soul"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Heros-Soul.png"
+    },
+    {
+        "name": "Indomitable Spirit",
+        "tag": ["indomitable spirit"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Indomitable-Spirit.png"
+    },
+    {
+        "name": "Intimidating Presence",
+        "tag": ["intimidating presence","intimidating","presence"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Intimidating-Presence.png"
+    },
+    {
+        "name": "Iron Will",
+        "tag": ["iron will", "iron", "will"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Iron-Will.png"
+    },
+    {
+        "name": "Lethal Dose",
+        "tag": ["lethal done","lethal","dose"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Lethal-Dose.png"
+    },
+    {
+        "name": "Life Harvest",
+        "tag": ["life harvest","life", "harvest"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Life-Harvest.png"
+    },
+    {
+        "name": "Lightning Cage",
+        "tag": ["lightning cave", "lighning", "cave"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Lightning-Cage.png"
+    },
+    {
+        "name": "Miracle Heal",
+        "tag": ["miracle heal", "miracle","heal"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Miracle-Heal.png"
+    },
+    {
+        "name": "Phantom Touch",
+        "tag": ["ohantom touch","phantom","touch"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Phantom-Touch.png"
+    },
+    {
+        "name": "Soul Reap",
+        "tag": ["soul reap", "soul", "reap"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Soul-Reap.png"
+    },
+    {
+        "name": "Survival-Instinct",
+        "tag": ["survival instinct","survival", "instinct"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Survival-Instinct.png"
+    },
+    {
+        "name": "Temporal Chains",
+        "tag": ["temporal chains", "temporal", "chains"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Temporal-Chains.png"
+    },
+    {
+        "name": "Ward of the Fallen",
+        "tag": ["ward of the fallen", "ward", "of", "the","fallen"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/Ward-of-the-Fallen.png"
+    },
+    {
+        "name": "Chaos",
+        "tag": ["chaos"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/chaos.png"
+    },
+    {
+        "name": "Dark",
+        "tag": ["dark"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/dark.png"
+    },
+    {
+        "name": "Light",
+        "tag": ["light"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/light.png"
+    },
+    {
+        "name": "War",
+        "tag": ["war"],
+        "image":"https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/Blessings/war.png"
+    }
+]

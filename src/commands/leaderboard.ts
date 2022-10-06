@@ -1,7 +1,4 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { time } from 'console';
-import exp from 'constants';
-import discord, { ApplicationCommandPermissionData, ButtonInteraction, CommandInteraction, Interaction, MessageActionRow, MessageButton, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, MessageEmbed, MessageSelectMenu, MessageSelectMenuOptions } from 'discord.js';
+import discord, {  ButtonInteraction, CommandInteraction, Interaction, ActionRowBuilder, ButtonBuilder, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, EmbedBuilder,   SlashCommandBuilder } from 'discord.js';
 import { leaderboard, mongoClient } from '../arbi';
 import { connectToCollection, IGuide } from '../general/util';
 
@@ -57,15 +54,15 @@ export async function execute(interaction: CommandInteraction) {
         }
         rank++;
     })
-    const embed = new MessageEmbed({
+    const embed = new EmbedBuilder({
         author: { name: `${numGuides} total pages with ${numPages} slides!` },
         fields: [{ name: `Elite Guide submitters leaderboard:`, value: `\`\`\`${leaderboardtext}\`\`\`` }]//{name: `Other guide submitters`,value:`\`\`\`${leaderboardtext2}\`\`\``}
     });
-    const embed2 = new MessageEmbed({
+    const embed2 = new EmbedBuilder({
 
         fields: [{ name: `Other guide submitters`, value: `\`\`\`${leaderboardtext2}\`\`\`` }]
     });
-    const embed3 = new MessageEmbed({
+    const embed3 = new EmbedBuilder({
 
         fields: [{ name: `Other guide submitters`, value: `\`\`\`${leaderboardtext3}\`\`\`` }]
     });

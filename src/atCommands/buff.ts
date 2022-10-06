@@ -1,5 +1,4 @@
-import { bold, userMention } from "@discordjs/builders";
-import { Message, MessageEmbed } from "discord.js";
+import { Message, EmbedBuilder } from "discord.js";
 import { leaderboard, logger, mongoClient } from "../arbi";
 import { IBuffDebuff } from "../general/IBuffDebuff";
 import { connectToCollection, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide } from "../general/util";
@@ -14,7 +13,7 @@ const commandFile: ICommandInfo = {
             //const searchArray = message.content.split(' ');
             //searchArray.shift();
             const searchText = input;
-            const embed: MessageEmbed = new MessageEmbed();
+            const embed: EmbedBuilder = new EmbedBuilder();
             const found: IBuffDebuff[] = fuzzySearch(buffs,searchText,['name']);
             if(found.length > 0){
                 embed.setDescription(found[0].desc)

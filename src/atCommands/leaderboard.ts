@@ -1,5 +1,4 @@
-import { bold, userMention } from "@discordjs/builders";
-import { Message, MessageActionRow, MessageButton, MessageComponentInteraction, MessageEmbed } from "discord.js";
+import { Message, EmbedBuilder } from "discord.js";
 import { totalmem } from "os";
 import { leaderboard, mongoClient } from "../arbi";
 import { Champion, IShardData, msToTime } from "../general/IShardData";
@@ -52,15 +51,15 @@ const commandFile: ICommandInfo = {
             }
             rank++;
         })
-        const embed = new MessageEmbed({
+        const embed = new EmbedBuilder({
             author: { name: `${numGuides} total pages with ${numPages} slides!` },
             fields: [{ name: `Elite Guide submitters leaderboard:`, value: `\`\`\`${leaderboardtext}\`\`\`` }]//{name: `Other guide submitters`,value:`\`\`\`${leaderboardtext2}\`\`\``}
         });
-        const embed2 = new MessageEmbed({
+        const embed2 = new EmbedBuilder({
 
             fields: [{ name: `Other guide submitters`, value: `\`\`\`${leaderboardtext2}\`\`\`` }]
         });
-        const embed3 = new MessageEmbed({
+        const embed3 = new EmbedBuilder({
 
             fields: [{ name: `Other guide submitters`, value: `\`\`\`${leaderboardtext3}\`\`\`` }]
         });

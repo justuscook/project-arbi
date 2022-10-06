@@ -1,5 +1,4 @@
-import { bold, Embed, SlashCommandBuilder, userMention } from '@discordjs/builders';
-import { ApplicationCommandPermissionData, ButtonInteraction, CommandInteraction, Interaction, Message, MessageActionRow, MessageButton, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, MessageEmbed, MessageSelectMenu, MessageSelectMenuOptions } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, Interaction, Message, ActionRowBuilder, ButtonBuilder, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, EmbedBuilder, bold, SlashCommandBuilder, userMention, ChatInputCommandInteraction } from 'discord.js';
 import { stringify } from 'querystring';
 import { inboxLinkButton } from '../general/util'
 import fs from 'fs';
@@ -14,13 +13,13 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setDefaultPermission(true)
 
 
-export async function execute(interaction: CommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
     const input = interaction.options.getString('command_name');
     await interaction.deferReply();
     try {
         if (!input) {
             const commands = await client.application.commands.fetch();
-            const embed: MessageEmbed = new MessageEmbed({
+            const embed: EmbedBuilder = new EmbedBuilder({
                 description: `${userMention((await interaction.user.fetch()).id)} Here is a list of my commands!`,
             });
             const commandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith('.js'));
@@ -38,7 +37,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 })
                 //console.lo
             }
-            embed.fields.push(
+            embed.data.fields.push(
                 {
                     inline: false,
                     name: 'Command versions',
@@ -46,7 +45,7 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                 }
             )
             for (const c of commands) {
-                embed.fields.push({
+                embed.data.fields.push({
                     name: c[1].name,
                     value: `Description: ${c[1].description}`,
                     inline: false
@@ -60,12 +59,12 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
         }
         else {
             const commands = await client.application.commands.fetch();
-            const embed: MessageEmbed = new MessageEmbed({
+            const embed: EmbedBuilder = new EmbedBuilder({
                 description: `${userMention((await interaction.user.fetch()).id)} Here is help for ${input}!`,
             });
             const commandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith(`${input}.js`));
             const command = require(__dirname + `//${commandFiles[0]}`);
-            embed.fields.push(
+            embed.data.fields.push(
                 {
                     inline: false,
                     name: 'Command versions',

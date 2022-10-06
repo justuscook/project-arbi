@@ -1,6 +1,5 @@
-import { bold, userMention } from "@discordjs/builders";
 import axios from "axios";
-import { Message, MessageEmbed } from "discord.js";
+import { Message, EmbedBuilder } from "discord.js";
 import { connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
 import {JSDOM} from 'jsdom';
 
@@ -14,7 +13,7 @@ const commandFile: ICommandInfo = {
         const dom = new JSDOM(response.data.article.body)
         const statusText = dom.window.document.querySelector('span').textContent;
         const title = response.data.article.title;
-        const embed: MessageEmbed = new MessageEmbed(
+        const embed: EmbedBuilder = new EmbedBuilder(
             {
                 description: statusText,
                 author: {
@@ -31,6 +30,6 @@ const commandFile: ICommandInfo = {
         },embeds: [embed]})
         return true;
     },
-    restricted: true
+    restricted: false
 }
 export default commandFile;

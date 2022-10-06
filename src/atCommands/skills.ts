@@ -1,5 +1,4 @@
-import { bold, userMention } from "@discordjs/builders";
-import { Message, MessageActionRow, MessageButton, MessageEmbed } from "discord.js";
+import { Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, MessageActionRowComponentBuilder, ButtonStyle, bold, userMention, ChannelType } from "discord.js";
 import { logger, mongoClient } from "../arbi";
 import { canDM, canShow, connectToCollection, delayDeleteMessages, fuzzySearch, getSkillsEmbeds, IChampionInfo, ICommandInfo, inboxLinkButton, removeShow, skillsButtonPagination } from "../general/util";
 
@@ -8,7 +7,7 @@ const commandFile: ICommandInfo = {
     execute: async (message: Message, input?: string): Promise<boolean> => {
         try {
             let showInServer = false;
-            let row1: MessageActionRow = new MessageActionRow;
+            let row1: ActionRowBuilder<MessageActionRowComponentBuilder> = new ActionRowBuilder<MessageActionRowComponentBuilder>;
             let allowDM = await canDM(message);
             let allowShow = await canShow(message);
             let champName = input;
@@ -39,19 +38,19 @@ const commandFile: ICommandInfo = {
                     }
                 }
 
-                const skillsEmbeds: MessageEmbed[] = getSkillsEmbeds(champ, false);
+                const skillsEmbeds: EmbedBuilder[] = getSkillsEmbeds(champ, false);
                 if (otherMatches !== '') {
                     for (const s of skillsEmbeds) {
-                        s.footer = {
+                        s.setFooter({
                             text: `Not the right champion? Try one of these searches: ${otherMatches}`
-                        }
+                        })
                     }
                 }
                 let i = 1;
                 for (const s of champ.skills) {
                     row1.addComponents(
-                        new MessageButton()
-                            .setStyle((i === 1) ? 'PRIMARY' : 'SUCCESS')
+                        new ButtonBuilder()
+                            .setStyle((i === 1) ? ButtonStyle.Primary : ButtonStyle.Success)
                             .setCustomId(`${i}`)
                             .setLabel(`A${i} - ${s.name}`)
                     )
@@ -69,12 +68,12 @@ const commandFile: ICommandInfo = {
                 }
                 else {
                     const inbox = await inboxLinkButton(message.author);
-                    const dmWarnEmbed: MessageEmbed = new MessageEmbed(
+                    const dmWarnEmbed: EmbedBuilder = new EmbedBuilder(
                         {
                             description: `${userMention((await message.author.fetch()).id)}, ${(allowShow === false && showInServer === true) ? `you can't show commands in this server, only mod in the offical Raid: SL server can.  ` : ``}I have sent the output in a DM, click the button below to check your inbox!`,
                         }
                     )
-                    if (message.channel.type !== 'DM') {
+                    if (message.channel.type !== ChannelType.DM) {
                         const dmWarn = await message.reply({
                             allowedMentions: {
                                 repliedUser: false

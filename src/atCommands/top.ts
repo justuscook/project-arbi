@@ -1,4 +1,4 @@
-import { Message, MessageEmbed } from "discord.js";
+import { Message, EmbedBuilder } from "discord.js";
 import { clipText, ICommandInfo } from "../general/util";
 import { topText } from '../arbi'
 
@@ -26,7 +26,7 @@ const commandFile: ICommandInfo = {
           }, sort: { orderBySumValue: -1 }, limit: 5
       }).toArray()*/
 
-      const embed: MessageEmbed = new MessageEmbed(
+      const embed: EmbedBuilder = new EmbedBuilder(
         {
           description: clipText(`Top 25 summon users (based on shards "pulled"):\n${topText}`)
         }
@@ -43,7 +43,7 @@ const commandFile: ICommandInfo = {
     }
     catch (err) {
       console.log(err);
-      const errEmbed: MessageEmbed = new MessageEmbed({
+      const errEmbed: EmbedBuilder = new EmbedBuilder({
         description: `There was an error with the command, it is logged and we will look into it!`
       })
       message.reply(
