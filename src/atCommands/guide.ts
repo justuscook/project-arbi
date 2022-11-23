@@ -1,4 +1,5 @@
-import { Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, EmbedImageData, MessageReaction, BaseMessageOptions, TextChannel, User, ButtonStyle, codeBlock, Colors, bold, MessageActionRowComponentBuilder, ChannelType } from "discord.js";
+import { Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, EmbedImageData, MessageReaction, BaseMessageOptions, TextChannel, User, codeBlock, Colors, bold, MessageActionRowComponentBuilder, ChannelType } from "discord.js";
+import { ButtonStyle } from 'discord-api-types/v10'
 import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches, leaderboard, mongoClient } from "../arbi";
 import { connectToCollection, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide, IMessageEmbeds } from "../general/util";
 import * as util from "../general/util";
@@ -40,10 +41,10 @@ const commandFile: ICommandInfo = {
                         .setStyle(ButtonStyle.Link)
                         .setURL(`https://discord.com/channels/@me/${await (await message.author.createDM()).id}`)
                 );
-            
+
             const collection = await util.connectToCollection('guides', mongoClient);
             const guides = await collection.find<util.IGuide>({}).toArray();
-            
+
             const phrases = ['early game', 'mid game', 'late game', 'late', 'mid', 'early', 'late game+', 'late game +', 'late game guide', 'late game+ guide'];
             let found: util.IGuide[];
 
@@ -103,11 +104,25 @@ const commandFile: ICommandInfo = {
                     content: `There are no guides for ${bold(input)} yet!`
                 })
 
-                AddToFailedGuideSearches(input);
+                const now = new Date();
+                const addYear = new Date(now.setFullYear(now.getFullYear() + 1))
+                const addMonth = new Date(addYear.setMonth(addYear.getMonth() + 1))
+
+                AddToFailedGuideSearches(input,[], now, addMonth);//
                 return true;
             }
             else {
-                AddToSuccessfulGuideSearches(input);
+
+                let foundsTags: string[] = [];
+                for (const x of found) {
+                    if (foundsTags.includes(x.tag[0])) { continue }
+                    foundsTags.push(x.tag[0])
+                }
+                const now = new Date();
+                const addYear = new Date(now.setFullYear(now.getFullYear() + 1))
+                const addMonth = new Date(addYear.setMonth(addYear.getMonth() + 1))
+
+                await AddToSuccessfulGuideSearches(input, foundsTags, now, addMonth);//foundsTags,now,addMonth
             }
             const first10orLess: util.IGuide[] = found.filter(x => found.indexOf(x) < 10)
 
@@ -127,8 +142,8 @@ const commandFile: ICommandInfo = {
                         url: d.image
                     }
                     if (d.image !== undefined) embed.setImage(image.url);
-                    embed.setTitle( d.label);
-                    embed.setDescription( d.desc);
+                    embed.setTitle(d.label);
+                    embed.setDescription(d.desc);
 
                     embeds.push(embed)
                 }
@@ -158,8 +173,9 @@ const commandFile: ICommandInfo = {
                     embeds[2] = botblackSlideEmbed;
                 }
                 embeds[2].setFooter({
-                    text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`                                    }
-                    
+                    text: `Page ${first10orLess.indexOf(f) + 1} of ${first10orLess.length}`
+                }
+
                 )
                 guideEmbeds.push({
                     topEmbed: embeds[0],
@@ -321,8 +337,8 @@ const commandFile: ICommandInfo = {
                 }
             }
         }
-        catch (err) {            
-            await util.handelError(err,message.author, commandFile.name,message.channel as TextChannel)
+        catch (err) {
+            await util.handelError(err, message.author, commandFile.name, message.channel as TextChannel)
             return false;
         }
     }

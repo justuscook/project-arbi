@@ -66,7 +66,7 @@ const commandFile: ICommandInfo = {
                 return true;
             }
             let shardsToPull = parseInt(input.split(' ')[1]);
-            if (shardsToPull === NaN) {
+            if (isNaN(shardsToPull)) {
                 await message.reply({
                     allowedMentions: {
                         repliedUser: false
@@ -249,13 +249,13 @@ const commandFile: ICommandInfo = {
                         }
                     )
                     if (rarityList.legendaries.length > 0) {
-                        embed.data.fields.push(legosField)
+                        embed.addFields(legosField)
                     }
                     if (rarityList.epics.length > 0) {
-                        embed.data.fields.push(epicsField)
+                        embed.addFields(epicsField)
                     }
                     if (rarityList.rares.length > 0) {
-                        embed.data.fields.push(raresField)
+                        embed.addFields(raresField)
                     }
                     setTimeout(async () => {
                         if (legoAnimation) {
@@ -288,13 +288,13 @@ const commandFile: ICommandInfo = {
                     }
                 )
                 if (rarityList.legendaries.length > 0) {
-                    embed.data.fields.push(legosField)
+                    embed.addFields(legosField)
                 }
                 if (rarityList.epics.length > 0) {
-                    embed.data.fields.push(epicsField)
+                    embed.addFields(epicsField)
                 }
                 if (rarityList.rares.length > 0) {
-                    embed.data.fields.push(raresField)
+                    embed.addFields(raresField)
                 }
                 setTimeout(async () => {
                     if (legoAnimation) {

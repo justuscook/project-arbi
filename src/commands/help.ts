@@ -37,7 +37,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
                 })
                 //console.lo
             }
-            embed.data.fields.push(
+            embed.addFields(
                 {
                     inline: false,
                     name: 'Command versions',
@@ -45,7 +45,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
                 }
             )
             for (const c of commands) {
-                embed.data.fields.push({
+                embed.addFields({
                     name: c[1].name,
                     value: `Description: ${c[1].description}`,
                     inline: false
@@ -64,7 +64,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
             });
             const commandFiles = fs.readdirSync(__dirname).filter(file => file.endsWith(`${input}.js`));
             const command = require(__dirname + `//${commandFiles[0]}`);
-            embed.data.fields.push(
+            embed.addFields(
                 {
                     inline: false,
                     name: 'Command versions',

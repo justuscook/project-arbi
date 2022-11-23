@@ -1,4 +1,5 @@
-import { CommandInteraction, Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, TextChannel, User, bold, ButtonStyle, codeBlock, SlashCommandBuilder, ChatInputCommandInteraction, Colors, MessageComponentBuilder, MessageActionRowComponentBuilder } from 'discord.js';
+import { CommandInteraction, Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, TextChannel, User, bold, codeBlock, SlashCommandBuilder, ChatInputCommandInteraction, Colors, MessageComponentBuilder, MessageActionRowComponentBuilder } from 'discord.js';
+import { ButtonStyle } from 'discord-api-types/v10'
 import { IMessageEmbeds } from '../general/util'
 import * as util from '../general/util';
 import { AddToFailedGuideSearches, AddToSuccessfulGuideSearches, mongoClient } from '../arbi';
@@ -114,11 +115,26 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         }
         if (found.length === 0) {
             await interaction.followUp(`There are no guides for ${bold(input)} yet!`);
-            AddToFailedGuideSearches(input);
+
+            const now = new Date();
+            const addYear = new Date(now.setFullYear(now.getFullYear() + 1))
+            const addMonth = new Date(addYear.setMonth(addYear.getMonth() + 1))
+
+            await AddToFailedGuideSearches(input, [], now, addMonth);//, [],now,addMonth
             return true;
         }
         else {
-            AddToSuccessfulGuideSearches(input);
+
+            let foundsTags: string[] = [];
+            for (const x of found) {
+                if (foundsTags.includes(x.tag[0])) { continue }
+                foundsTags.push(x.tag[0])
+            }
+            const now = new Date();
+            const addYear = new Date(now.setFullYear(now.getFullYear() + 1))
+            const addMonth = new Date(addYear.setMonth(addYear.getMonth() + 1))
+
+            await AddToSuccessfulGuideSearches(input, foundsTags, now, addMonth);//foundsTags,now,addMonth
         }
         const first10orLess: util.IGuide[] = found.filter(x => found.indexOf(x) < 10)
 

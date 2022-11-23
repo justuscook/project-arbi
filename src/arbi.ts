@@ -1,6 +1,7 @@
-import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, ApplicationCommandResolvable, TextChannel, User, Message, Interaction, EmbedBuilder, GuildChannel, Role, Partials, GatewayIntentBits, userMention, PermissionsBitField, PermissionFlagsBits, REST, Routes, ChatInputCommandInteraction } from 'discord.js';
+import { ApplicationCommand, Client, ClientApplication, Collection, CommandInteraction, Guild, OAuth2Guild, Snowflake, ApplicationCommandResolvable, TextChannel, User, Message, Interaction, EmbedBuilder, GuildChannel, Role, Partials, userMention, PermissionsBitField, REST, ChatInputCommandInteraction } from 'discord.js';
 import fs from 'fs';
-import express, { Response, Request, response } from 'express';
+import { GatewayIntentBits, Routes } from 'discord-api-types/v10'
+import express, { Response, Request } from 'express';
 import { clientId, testClientId, guildIDs, token, testToken } from './config.json';
 import { connectToCollection, connectToDB, Data, getAuthToken, getLeaderboard, getSpreadSheetValues, getTop, guidesSheetID, handelError, IGuide, IGuideResponse, updateFormat, validateGuide } from './general/util';
 import './ws-polyfill.js'
@@ -10,11 +11,12 @@ import http from 'http';
 import tracer from 'tracer';
 import * as promClient from 'prom-client';
 import axios from 'axios';
-import cors from 'cors'
+import cors from 'cors';
 import { IShardData } from './general/IShardData';
-import { get } from 'mongoose';
+import { get, trusted } from 'mongoose';
 import { MongoClient } from 'mongodb';
-
+//db2 pass 8Pi7AwyUjlOOfgWm
+//connection string mongodb+srv://arbi:<password>@cluster0.iuswecc.mongodb.net/test
 /*
 const api = useRaidToolkitApi(IAccountApi);
 const account = (await api.getAccounts())[0];
@@ -25,7 +27,6 @@ let accountDump = await api.getAccountDump(account.id);*/
 let TOKEN = token;
 let CLIENTID = clientId;
 let ip = '';
-
 export let mongoClient: MongoClient;
 export let leaderboard: Map<string, number>;
 export let topText: string;
@@ -69,9 +70,64 @@ app.get('/', (req: Request, res: Response) => {
 app.get('/', (req: Request, res: Response) => {
     res.status(200).send('test')
 });
-app.get('/online', (req: Request, res: Response) => {
-    res.status(200).json({ status: 'online' })
+app.post('/guildCheck', async (req: Request, res: Response) => {
+    try {
+        interface GuildInfo {
+            name: string
+            id: string,
+            botInGuild: boolean,
+            hasPerms: boolean,
+            icon: string
+        }
+        //const userPerms = new PermissionsBitField(`${req.body.userPerms}`);
+        const userGuilds = req.body.userGuilds;
+        let qualifyingGuilds: GuildInfo[] = [];
+        //guild = await client.guilds.cache.has(userGuild);
+        const hasPermsGuilds = userGuilds.filter((g) => new PermissionsBitField(`${g.permissions}`).has(['Administrator', 'ManageGuild']))
+        for (const g of hasPermsGuilds) {
+
+            const inGuild = await client.guilds.cache.has(g.id);
+            const qg = {
+                name: g.name,
+                id: g.id,
+                botInGuild: inGuild,
+                hasPerms: true,
+                icon: g.icon
+            }
+            qualifyingGuilds.push(qg);
+        }
+
+        /*
+        }
+        catch (err:any){
+            console.log(err)
+        }
+        if (guild) {
+            data.botInGuild = true;
+        }
+        if (userPerms.has(['Administrator', 'ManageGuild'])) {
+            data.hasPerms = true;
+        }*/
+        console.log(qualifyingGuilds)
+        res.send({qualifyingGuilds: qualifyingGuilds});
+    }
+    catch (err) {
+        console.log(err)
+    }
+})
+app.get('/botStats', async (req: Request, res: Response) => {
+    const total = await client.guilds.cache;
+    const collection = await connectToCollection('guide_stats', mongoClient);
+    const failed = await collection.find({ success: false }).toArray();
+    const successful = await collection.find({ success: true }).toArray();
+    res.status(200).json({
+        status: 'online',
+        servers: total.size,
+        failed: failed,
+        successful: successful
+    })
 });
+
 
 app.post('/prom', async (req: Request, res: Response) => {
     const response = await axios({
@@ -305,7 +361,7 @@ client.on('messageCreate', async (message: Message) => {
  * Command/Interaction handler
  */
 
-client.on('interactionCreate', async (interaction )=> {
+client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
     const command: any = client.commands.get(interaction.commandName);
@@ -402,17 +458,37 @@ export function AddCommandToTotalFailedCommands(name: string) {
 }
 /**
  * Add to successful guide search total.
- * @param {string} name CHampion name searched.
+ * @param {string} input CHampion name searched.
  */
-export function AddToSuccessfulGuideSearches(name: string) {
-    bot_guides_successful_total.labels(name).inc();
+export async function AddToSuccessfulGuideSearches(input: string, matched: string[], time: Date, expireAt: Date) {//matched: string[], time: Date, expireAt: Date
+    bot_guides_successful_total.labels(input).inc();
+
+    const data = {
+        searchTerm: input,
+        matched: matched,
+        time: time,
+        success: true,
+        expireAt: expireAt
+    }
+    const collection = await connectToCollection('guide_stats', mongoClient);
+    await collection.insertOne(data)
 }
 /**
  * Add to failed guides search total.
  * @param {string} name Champion name searched.   
  */
-export function AddToFailedGuideSearches(name: string) {
-    bot_guides_failed_total.labels(name).inc();
+export async function AddToFailedGuideSearches(input: string, matched: string[], time: Date, expireAt: Date) {// 
+    bot_guides_failed_total.labels(input).inc();
+
+    const data = {
+        searchTerm: input,
+        matched: matched,
+        time: time,
+        success: false,
+        expireAt: expireAt
+    }
+    const collection = await connectToCollection('guide_stats', mongoClient);
+    await collection.insertOne(data);
 }
 //job
 register.setDefaultLabels({

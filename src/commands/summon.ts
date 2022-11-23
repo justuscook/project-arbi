@@ -4,7 +4,7 @@ import { champsByRarity, createTenPullImage } from '../general/imageUtils';
 import { IChampPull, IShardData, Mercy, msToTime } from '../general/IShardData';
 import { clipText, connectToCollection, IChampionInfo } from '../general/util';
 import { v1 as uuidv1 } from 'uuid';
-import { APIMessage } from 'discord-api-types';
+import { APIMessage } from 'discord-api-types/v10';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
@@ -74,7 +74,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         return true;
     }
     let shardsToPull = parseInt(input[1]);
-    if (shardsToPull === NaN) {
+    if (isNaN(shardsToPull)) {
         await interaction.followUp({
             allowedMentions: {
                 repliedUser: false
@@ -285,13 +285,13 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
                     }
                 )
                 if (rarityList.legendaries.length > 0) {
-                    embed.data.fields.push(legosField)
+                    embed.addFields(legosField)
                 }
                 if (rarityList.epics.length > 0) {
-                    embed.data.fields.push(epicsField)
+                    embed.addFields(epicsField)
                 }
                 if (rarityList.rares.length > 0) {
-                    embed.data.fields.push(raresField)
+                    embed.addFields(raresField)
                 }
                 setTimeout(async () => {
                     if (legoAnimation) {
@@ -327,13 +327,13 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
                 }
             )
             if (rarityList.legendaries.length > 0) {
-                embed.data.fields.push(legosField)
+                embed.addFields(legosField)
             }
             if (rarityList.epics.length > 0) {
-                embed.data.fields.push(epicsField)
+                embed.addFields(epicsField)
             }
             if (rarityList.rares.length > 0) {
-                embed.data.fields.push(raresField)
+                embed.addFields(raresField)
             }
             setTimeout(async () => {
                 if (legoAnimation) {

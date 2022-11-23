@@ -32,7 +32,7 @@ const commandFile: ICommandInfo = {
                     })
                     //console.lo
                 }
-                embed.data.fields.push(
+                embed.addFields(
                     {
                         inline: false,
                         name: 'Command versions',
@@ -40,7 +40,7 @@ const commandFile: ICommandInfo = {
                     }
                 )
                 for (const c of commands) {
-                    embed.data.fields.push({
+                    embed.addFields({
                         name: c[1].name,
                         value: `Description: ${c[1].description}`,
                         inline: false
@@ -59,7 +59,7 @@ const commandFile: ICommandInfo = {
                 });
                 const commandFiles = fs.readdirSync(__dirname + '//..//commands').filter(file => file.endsWith(`${input}.js`));
                 const command = require(__dirname + `//..//commands//${commandFiles[0]}`);
-                embed.data.fields.push(
+                embed.addFields(
                     {
                         inline: false,
                         name: 'Command versions',

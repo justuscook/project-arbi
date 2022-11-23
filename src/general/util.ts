@@ -1,6 +1,6 @@
-import { Client, ClientApplication, ColorResolvable, CommandInteraction, GuildMemberRoleManager, Message, ActionRowBuilder, AttachmentBuilder, ButtonBuilder, MessageComponentInteraction, EmbedBuilder, TextChannel, User, Colors, ButtonStyle, ButtonComponent, bold, MessageActionRowComponentBuilder } from "discord.js";
+import { Client, ClientApplication, ColorResolvable, CommandInteraction, GuildMemberRoleManager, Message, ActionRowBuilder, AttachmentBuilder, ButtonBuilder, MessageComponentInteraction, EmbedBuilder, TextChannel, User, Colors, ButtonComponent, bold, MessageActionRowComponentBuilder } from "discord.js";
+import {ButtonStyle} from 'discord-api-types/v10'
 import { google } from 'googleapis';
-import { Storage } from '@google-cloud/storage';
 import path from 'path';
 import Fuse from 'fuse.js';
 import Axios from 'axios';
@@ -492,7 +492,7 @@ export function getGuideList(guide_data: IGuide[]): string[] {
  */
 export async function
     connectToDB(): Promise<MongoClient> {
-    const uri = `mongodb+srv://arbi:${dbpass}@arbi.g6e2c.mongodb.net/Arbi?retryWrites=true&w=majority`;
+    const uri = `mongodb+srv://arbi:${dbpass}@cluster0.iuswecc.mongodb.net/test`;
     const mongoClient: MongoClient = new MongoClient(uri);
 
     return mongoClient;
