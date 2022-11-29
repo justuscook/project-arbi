@@ -52,9 +52,7 @@ export const client: any = new Client({
         Partials.Channel, Partials.Reaction, Partials.Message
     ]
 });
-const app = express();
-app.use(cors());
-app.use(express.json());
+
 client.atCommands = new Collection();
 const atCommandFiles = fs.readdirSync(__dirname + '/atCommands').filter(file => file.endsWith('.js'));
 
