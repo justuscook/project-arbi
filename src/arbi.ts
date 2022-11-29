@@ -9,7 +9,6 @@ import { uploadImage } from './general/util';
 import https from 'https';
 import http from 'http';
 import tracer from 'tracer';
-import * as promClient from 'prom-client';
 import axios from 'axios';
 import cors from 'cors';
 import { IShardData } from './general/IShardData';
@@ -56,220 +55,6 @@ export const client: any = new Client({
 const app = express();
 app.use(cors());
 app.use(express.json());
-/*
-app.listen(9001, () => {
-    console.log('Bot Listening on port 9001 ⚡');
-})*/
-
-
-/*
-app.get('/', (req: Request, res: Response) => {
-    res.send('Bot online 🤖⚡')
-})
-*/
-app.get('/', (req: Request, res: Response) => {
-    res.status(200).send('test')
-});
-app.post('/guildCheck', async (req: Request, res: Response) => {
-    try {
-        interface GuildInfo {
-            name: string
-            id: string,
-            botInGuild: boolean,
-            hasPerms: boolean,
-            icon: string
-        }
-        //const userPerms = new PermissionsBitField(`${req.body.userPerms}`);
-        const userGuilds = req.body.userGuilds;
-        let qualifyingGuilds: GuildInfo[] = [];
-        //guild = await client.guilds.cache.has(userGuild);
-        const hasPermsGuilds = userGuilds.filter((g) => new PermissionsBitField(`${g.permissions}`).has(['Administrator', 'ManageGuild']))
-        for (const g of hasPermsGuilds) {
-
-            const inGuild = await client.guilds.cache.has(g.id);
-            const qg = {
-                name: g.name,
-                id: g.id,
-                botInGuild: inGuild,
-                hasPerms: true,
-                icon: g.icon
-            }
-            qualifyingGuilds.push(qg);
-        }
-
-        /*
-        }
-        catch (err:any){
-            console.log(err)
-        }
-        if (guild) {
-            data.botInGuild = true;
-        }
-        if (userPerms.has(['Administrator', 'ManageGuild'])) {
-            data.hasPerms = true;
-        }*/
-        console.log(qualifyingGuilds)
-        res.send({qualifyingGuilds: qualifyingGuilds});
-    }
-    catch (err) {
-        console.log(err)
-    }
-})
-app.get('/botStats', async (req: Request, res: Response) => {
-    const total = await client.guilds.cache;
-    const collection = await connectToCollection('guide_stats', mongoClient);
-    const failed = await collection.find({ success: false }).toArray();
-    const successful = await collection.find({ success: true }).toArray();
-    res.status(200).json({
-        status: 'online',
-        servers: total.size,
-        failed: failed,
-        successful: successful
-    })
-});
-
-
-app.post('/prom', async (req: Request, res: Response) => {
-    const response = await axios({
-        url: req.body.url,
-        method: 'GET',
-        responseType: 'json',
-        params: {
-            query: req.body.query
-        }
-    })
-    res.send(response.data);
-})
-app.post('/guideUpdate', async (req: Request, res: Response) => {
-    const chan = await client.channels.fetch('898601285748662332') as TextChannel;//guide-submission-reports
-    const auth = await getAuthToken();
-    //console.log('New guide approved!')
-    res.status(200).send('Bot recieved needed info!');
-    const guideResponse: IGuideResponse = req.body;
-    //console.log(guideResponse)
-    const row = await getSpreadSheetValues({
-        sheetNameOrRange: `${guideResponse.sheetName}!R${guideResponse.range.rowStart}C${1}:R${guideResponse.range.rowEnd}C${25}`,
-        auth: await getAuthToken(),
-        spreadsheetId: guidesSheetID
-    });
-    guideResponse.data = row.data.values[0];
-    let dungeonGuide = false;
-    let tags = [];
-    (guideResponse.data[5].includes(',')) ? tags.push([...guideResponse.data[5].split(',')]) : tags.push(guideResponse.data[5].trim());
-    if (guideResponse.data[1] === 'TRUE') dungeonGuide = true;
-    let guide: IGuide = {
-        author: guideResponse.data[3].split(', '),
-        rarity: guideResponse.data[7],
-        stage: guideResponse.data[6],
-        tag: (dungeonGuide) ? (guideResponse.data[7]) ? [tags[0], 'dungeon', 'champion', ...tags.slice(1)] : [guideResponse.data[5], 'dungeon'] : [tags[0], 'champion'],
-        title: guideResponse.data[4],
-        data: []
-    }
-    if (tags[0].toLowerCase() === 'general') {
-        guide.tag = [tags[0].toLowerCase()];
-    }
-    guide.tag = guide.tag.filter(x => x !== undefined);
-
-    const guidesSlides: Data[] = []
-    const topUpload = await uploadImage(guideResponse.data[9], client, auth);
-    const midUpload = await uploadImage(guideResponse.data[12], client, auth);
-    const botUpload = await uploadImage(guideResponse.data[15], client, auth);
-
-    guidesSlides.push(
-        {
-            desc: guideResponse.data[8],
-            label: guideResponse.data[4],
-            image: (guideResponse.data[10]) ? guideResponse.data[10] : topUpload
-        },
-        {
-            desc: guideResponse.data[11],
-            label: (dungeonGuide) ? 'Notes:' : 'Masteries:',
-            image: (guideResponse.data[13]) ? guideResponse.data[13] : midUpload
-        });
-    if (guideResponse.data[14].length > 0) {
-        guidesSlides.push({
-            desc: guideResponse.data[14],
-            label: 'Notes:',
-            image: (guideResponse.data[16]) ? guideResponse.data[16] : botUpload
-        })
-    }
-    let failedImages = '';
-    for (const g of guidesSlides) {
-        if (g.image.includes('failed')) {
-            failedImages += g.image + '\n';
-        }
-    }
-    if (failedImages !== '') {
-        await chan.send(`There here errors downloading some images:\n${failedImages}`);
-    }
-    if (guideResponse.data[18] !== '') {
-        guide.order = parseInt(guideResponse.data[18]);
-    }
-    guide.data.push(...guidesSlides);
-    const guideErrors = validateGuide(guide);
-
-    let guider: User;
-    if (guideResponse.user === '') guideResponse.user = 'noPing';
-    if (guideResponse.user !== 'noPing') {
-        if (guideResponse.user === ('iankyl93@gmail.com')) {
-            guider = await client.users.fetch('205448080797990912')//205448080797990912
-        }
-        if (guideResponse.user === ('Origin7303@gmail.com')) {
-            guider = await client.users.fetch('227837830704005140')//227837830704005140
-        }
-        if (guideResponse.user === 'mr.justus.cook@gmail.com') {
-            guider = await client.users.fetch('269643701888745474')//269643701888745474
-        }
-    }
-    if (guideErrors.length < 1) {
-        await chan.send(`${(guideResponse.user !== 'noPing') ? userMention(guider.id) : 'Hey guys'}, Guide ${guide.title} has no errors! Submitting the guide now!`);
-
-    }
-    else {
-        await chan.send(`${userMention(guider.id)}, (┬┬﹏┬┬) Please fix these errors in the guide:\n${guideErrors}`);
-        await updateFormat(guideResponse.sheetId, guideResponse.range, auth, [1, 0, 0]);
-        return;
-    }
-    await updateFormat(guideResponse.sheetId, guideResponse.range, auth);
-
-    const collection = await connectToCollection('guides', mongoClient);
-    const guides = await collection.updateOne(
-        { title: guide.title },
-        { $set: guide },
-        { upsert: true },
-        async (err: any, result: any) => {
-            if (err) {
-                await chan.send(`╯︿╰ The guide submission/update failed.\n${err}`)
-
-            }
-            else {
-
-            }
-        });
-
-    //console.log(guide)
-    //const approvedGuides = guideRawValues.data.values.filter(x => x[0] === 'TRUE'  && x.length > 1)
-
-    //console.log(approvedGuides);
-})
-const httpServer = http.createServer(app);
-httpServer.listen(81, () => {
-    console.log('HTTP Server listening on port 81');
-})
-try {
-    const httpsServer = https.createServer({
-        key: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/privkey.pem'),
-        cert: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/fullchain.pem')
-    }, app);
-
-    httpsServer.listen(9001, () => {
-        console.log('HTTPS Server listening on port 9001');
-    })
-}
-catch {
-    console.log('Testing environment.')
-}
-
 client.atCommands = new Collection();
 const atCommandFiles = fs.readdirSync(__dirname + '/atCommands').filter(file => file.endsWith('.js'));
 
@@ -291,7 +76,6 @@ client.once('ready', async () => {
     console.log('Ready!');
     await deployCommands();
     const num = await client.guilds.fetch();
-    bot_guilds_total.set(num.size);
     leaderboard = await getLeaderboard();
     topText = await getTop();
     setInterval(async () => {
@@ -307,7 +91,6 @@ client.once('ready', async () => {
     }*/
 
 });
-
 
 
 client.on('messageCreate', async (message: Message) => {
@@ -339,12 +122,10 @@ client.on('messageCreate', async (message: Message) => {
     }
     try {
         const commandSuccess: Promise<boolean> = await command.execute(message, input);
-        AddCommandToTotalCommands(commandName)
+        
         if (commandSuccess === undefined || commandSuccess) {
-            AddCommandToTotalSuccessfulCommands(commandName);
         }
         else {
-            AddCommandToTotalFailedCommands(commandName);
             const errorChan: TextChannel = await client.channels.fetch('958715861743579187');
             await errorChan.send(`${await client.users.fetch('269643701888745474')}Error in ${commandName} check the bot logs!`);
         }
@@ -371,12 +152,9 @@ client.on('interactionCreate', async (interaction) => {
     try {
 
         const commandSuccess: Promise<boolean> = await command.execute(interaction);
-        AddCommandToTotalCommands(command.data.name)
         if (commandSuccess === undefined || commandSuccess) {
-            AddCommandToTotalSuccessfulCommands(command.data.name);
         }
         else {
-            AddCommandToTotalFailedCommands(command.data.name);
             const errorChan: TextChannel = await client.channels.fetch('958715861743579187');
             await errorChan.send(`${await client.user.fetch('269643701888745474')}Error in ${command.data.name}, check the logs!`);
         }
@@ -407,93 +185,6 @@ function connectBot() {
 }
 
 connectBot();
-
-const register = new promClient.Registry();
-
-const bot_guilds_total: promClient.Gauge<string> = new promClient.Gauge({
-    name: 'bot_guilds_total',
-    help: 'The number of guilds the bot is in when all shards are available.'
-});
-
-const bot_commands_total: promClient.Counter<string> = new promClient.Counter({
-    name: 'bot_commands_total',
-    help: 'The number of commands the bot has processed.',
-    labelNames: ['name']
-});
-
-const bot_commands_successful_total: promClient.Counter<string> = new promClient.Counter({
-    name: 'bot_commands_successful_total',
-    help: 'The number of commands the bot has processed successfully.',
-    labelNames: ['name']
-});
-
-const bot_commands_failed_total: promClient.Counter<string> = new promClient.Counter({
-    name: 'bot_commands_failed_total',
-    help: 'The number of commands the bot has tried to process and failed.',
-    labelNames: ['name']
-});
-
-const bot_guides_successful_total: promClient.Counter<string> = new promClient.Counter({
-    name: 'bot_guides_successful_total',
-    help: 'The number successful guide searches.',
-    labelNames: ['searchTerm']
-})
-
-const bot_guides_failed_total: promClient.Counter<string> = new promClient.Counter({
-    name: 'bot_guides_failed_total',
-    help: 'The number failed guide searches.',
-    labelNames: ['searchTerm']
-})
-
-export function AddCommandToTotalCommands(name: string) {
-    bot_commands_total.labels(name).inc();
-}
-
-export function AddCommandToTotalSuccessfulCommands(name: string) {
-    bot_commands_successful_total.labels(name).inc();
-}
-
-export function AddCommandToTotalFailedCommands(name: string) {
-    bot_commands_failed_total.labels(name).inc();
-}
-/**
- * Add to successful guide search total.
- * @param {string} input CHampion name searched.
- */
-export async function AddToSuccessfulGuideSearches(input: string, matched: string[], time: Date, expireAt: Date) {//matched: string[], time: Date, expireAt: Date
-    bot_guides_successful_total.labels(input).inc();
-
-    const data = {
-        searchTerm: input,
-        matched: matched,
-        time: time,
-        success: true,
-        expireAt: expireAt
-    }
-    const collection = await connectToCollection('guide_stats', mongoClient);
-    await collection.insertOne(data)
-}
-/**
- * Add to failed guides search total.
- * @param {string} name Champion name searched.   
- */
-export async function AddToFailedGuideSearches(input: string, matched: string[], time: Date, expireAt: Date) {// 
-    bot_guides_failed_total.labels(input).inc();
-
-    const data = {
-        searchTerm: input,
-        matched: matched,
-        time: time,
-        success: false,
-        expireAt: expireAt
-    }
-    const collection = await connectToCollection('guide_stats', mongoClient);
-    await collection.insertOne(data);
-}
-//job
-register.setDefaultLabels({
-    app: 'project-arbi-bot'
-});
 
 async function deployCommands() {
     const commands = [];
@@ -578,14 +269,3 @@ async function deployCommands() {
         }
     })();
 }
-
-setInterval(async () => {
-    const num = await client.guilds.fetch();
-    bot_guilds_total.set(num.size);
-}, 1.8e+6);
-
-
-app.get('/metrics', async (req, res) => {
-    res.set('Content-Type', promClient.register.contentType)
-    res.end(await promClient.register.metrics())
-});
