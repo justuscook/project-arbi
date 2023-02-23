@@ -21,9 +21,33 @@ const api = useRaidToolkitApi(IAccountApi);
 const account = (await api.getAccounts())[0];
 let accountDump = await api.getAccountDump(account.id);*/
 
+const app = express();
+app.use(cors());
+app.use(express.json());
 
+const httpServer = http.createServer(app);
+httpServer.listen(811, () => {
+    console.log('HTTP Server listening on port 811');
+})
+try {
+    const httpsServer = https.createServer({
+        key: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/privkey.pem'),
+        cert: fs.readFileSync('/etc/letsencrypt/live/project-arbi.online/fullchain.pem')
+    }, app);
 
+    httpsServer.listen(54321, () => {
+        console.log('HTTPS Server listening on port 9001');
+    })
+}
+catch {
+    console.log('Testing environment.')
+}
+
+app.get('/online', (req: Request, res: Response) => {
+    res.json({status: 'online'});
+});
 let TOKEN = token;
+
 let CLIENTID = clientId;
 let ip = '';
 export let mongoClient: MongoClient;
@@ -119,18 +143,20 @@ client.on('messageCreate', async (message: Message) => {
         }
     }
     try {
-        const commandSuccess: Promise<boolean> = await command.execute(message, input);
+        const collection = await connectToCollection('guild_settings', mongoClient);
+        const serverSettings = await collection.findOne({guildID: message.guildId})
+        const commandSuccess: Promise<boolean> = await command.execute(message, input, serverSettings);
         
         if (commandSuccess === undefined || commandSuccess) {
         }
-        else {
+        else {            
             const errorChan: TextChannel = await client.channels.fetch('958715861743579187');
             await errorChan.send(`${await client.users.fetch('269643701888745474')}Error in ${commandName} check the bot logs!`);
         }
     } catch (error) {
 
         logger.error(error);
-        console.log(`$Error in {commandName}:\n${error}`)
+        console.log(`$Error in ${commandName}:\n${error}`)
         const errorChan: TextChannel = await client.channels.fetch('958715861743579187');
         await errorChan.send(`${await client.users.fetch('269643701888745474')}Error in ${commandName}: \n${error}`);
     }
@@ -148,11 +174,15 @@ client.on('interactionCreate', async (interaction) => {
     if (!command) return;
 
     try {
-
-        const commandSuccess: Promise<boolean> = await command.execute(interaction);
+        const collection = await connectToCollection('guild_settings', mongoClient);
+        const serverSettings = await collection.findOne({guildID: (interaction as ChatInputCommandInteraction).guildId})
+        const commandSuccess: Promise<boolean> = await command.execute(interaction, serverSettings);
+        
         if (commandSuccess === undefined || commandSuccess) {
+            
         }
         else {
+            
             const errorChan: TextChannel = await client.channels.fetch('958715861743579187');
             await errorChan.send(`${await client.user.fetch('269643701888745474')}Error in ${command.data.name}, check the logs!`);
         }
@@ -184,6 +214,34 @@ function connectBot() {
 
 connectBot();
 
+export async function AddToSuccessfulGuideSearches(input: string, matched: string[], time: Date, expireAt: Date) {//matched: string[], time: Date, expireAt: Date
+    
+    const data = {
+        searchTerm: input,
+        matched: matched,
+        time: time,
+        success: true,
+        expireAt: expireAt
+    }
+    const collection = await connectToCollection('guide_stats', mongoClient);
+    await collection.insertOne(data)
+}
+/**
+ * Add to failed guides search total.
+ * @param {string} name Champion name searched.   
+ */
+export async function AddToFailedGuideSearches(input: string, matched: string[], time: Date, expireAt: Date) {// 
+    
+    const data = {
+        searchTerm: input,
+        matched: matched,
+        time: time,
+        success: false,
+        expireAt: expireAt
+    }
+    const collection = await connectToCollection('guide_stats', mongoClient);
+    await collection.insertOne(data);
+}
 async function deployCommands() {
     const commands = [];
     const globalCommands = [];

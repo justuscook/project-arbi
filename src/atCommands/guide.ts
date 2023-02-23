@@ -7,7 +7,7 @@ import { content } from "googleapis/build/src/apis/content";
 
 const commandFile: ICommandInfo = {
     name: 'guide',
-    execute: async (message: Message, input?: string): Promise<boolean> => {
+    execute: async (message: Message, input?: string, serverSettings?: util.ServerSettings): Promise<boolean> => {
         let row1 = new ActionRowBuilder<MessageActionRowComponentBuilder>;
         let row2 = new ActionRowBuilder<MessageActionRowComponentBuilder>;
         let showInServer = false;
@@ -15,7 +15,7 @@ const commandFile: ICommandInfo = {
         let userToDM: User;
         const originalUser: User = message.author;
         let canDM = await util.canDM(message);
-        let canShow = await util.canShow(message);
+        let canShow = await util.canShow(message);        
         //let input = util.getUserInput(message.content);
         let ogInput = input;
         //input = input.trimEnd().trimStart();
@@ -23,7 +23,12 @@ const commandFile: ICommandInfo = {
         if (input.toLowerCase().includes('show')) {
             input = util.removeShow(input).trimEnd().trimStart();
             showInServer = true;
-        }//const regexCheck = /<@(!|)userID>/gim;
+        }
+        if(serverSettings.showInServer){
+            canShow = true;
+            showInServer = true;
+        }
+        //const regexCheck = /<@(!|)userID>/gim;
         //if (regexCheck.exec(x) !== null) {}
         if (input.includes('<@')) {
             input = input.replace(/!/g, '');

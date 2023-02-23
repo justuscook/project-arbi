@@ -1,12 +1,12 @@
-import discord, { Colors, CommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import discord, { ChatInputCommandInteraction, Colors, CommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { logger } from '../arbi';
+import { ServerSettings } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
-    .setName('support')
-    .setDefaultPermission(true)
+    .setName('support')    
     .setDescription('Join the support server to get help or just chat with us');
-export async function execute(interaction: CommandInteraction) : Promise<boolean>{
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings) : Promise<boolean>{
     await interaction.deferReply();
     try {
         const embed: EmbedBuilder = new EmbedBuilder({

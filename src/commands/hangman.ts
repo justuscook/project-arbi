@@ -1,6 +1,6 @@
 import { CollectorFilter, CommandInteraction, Interaction, Message, EmbedBuilder, MessageReaction, ReactionCollector, User, codeBlock, SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { IShardData, msToTime } from "../general/IShardData";
-import { getRandomIntInclusive, nonchachedImage } from "../general/util";
+import { getRandomIntInclusive, nonchachedImage, ServerSettings } from "../general/util";
 import { clipText, connectToCollection, fuzzySearch, getInput, getTop, IChampionInfo, ICommandInfo, IGuide } from "../general/util";
 import { mongoClient, topText } from '../arbi';
 
@@ -21,7 +21,7 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setDescription('Play Raid:SL version of hangman with champion names.')
 
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings): Promise<boolean> {
     await interaction.deferReply();
     try {
         const input: string = interaction.options.getString('difficulty');

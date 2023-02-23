@@ -1,22 +1,20 @@
 import { CommandInteraction, Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, bold, ButtonStyle, ChatInputCommandInteraction, SlashCommandBuilder, userMention, ChannelType } from 'discord.js';
-import { getColorByRarity, connectToCollection, fuzzySearch, getFactionImage, IChampionInfo, canShow, inboxLinkButton, delayDeleteMessages, removeShow, nonchachedImage } from '../general/util';
+import { getColorByRarity, connectToCollection, fuzzySearch, getFactionImage, IChampionInfo, canShow, inboxLinkButton, delayDeleteMessages, removeShow, nonchachedImage, ServerSettings } from '../general/util';
 import { logger, mongoClient } from '../arbi';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('stats')
-
     .addStringOption(option => option.setName('champion_name')
         .setDescription('Enter a champions name').setRequired(true))
     .addBooleanOption(option => option
         .setDescription('Wether to show the command in the channel or not.')
         .setName('show_in_server')
-        .setRequired(false)
-    )
+        .setRequired(false))
     .setDescription('Search for champion information by name.')
-    .setDefaultPermission(true);
+    ;
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings): Promise<boolean> {
     await interaction.deferReply();
     try {
         let showInServer = interaction.options.getBoolean('show_in_server');
@@ -28,10 +26,10 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
             showInServer = true,
                 champName = removeShow(champName);
         }
-        
+
         const collection = await connectToCollection('champion_info', mongoClient);
         const champs = await collection.find<IChampionInfo>({}).toArray();
-        
+
         const found: IChampionInfo[] = fuzzySearch(champs, champName, ['name']);
 
         if (found.length > 0) {
@@ -58,7 +56,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
                     url: getFactionImage(champ.faction)
                 },
                 image: {
-                    url: `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${(champ.rarity !== 'Common' ) ? champ.id - 6 : champ.id}.png${nonchachedImage()}`
+                    url: `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${(champ.rarity !== 'Common') ? champ.id - 6 : champ.id}.png${nonchachedImage()}`
                 },
                 fields: [{
                     name: 'Faction:',
@@ -123,16 +121,16 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
             });
             if (champ.aura) {
-                embed.addFields({name: 'Aura:', value: champ.aura, inline: false});
+                embed.addFields({ name: 'Aura:', value: champ.aura, inline: false });
             }
-            embed.addFields({name:'Books to max skills:',value: champ.totalBooks,inline: false});
+            embed.addFields({ name: 'Books to max skills:', value: champ.totalBooks, inline: false });
 
             if (otherMatches !== '') {
                 embed.data.footer = {
                     text: `Not the right champion? Try one of these searches: ${otherMatches}`
                 }
             }
-            
+
             let i = 1;
             for (const s of champ.skills) {
                 row1.addComponents(

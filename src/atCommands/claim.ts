@@ -1,11 +1,11 @@
 import { Message, EmbedBuilder } from "discord.js";
 import { mongoClient } from "../arbi";
 import { IShardData, msToTime } from "../general/IShardData";
-import { connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide } from "../general/util";
+import { connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide, ServerSettings } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'claim',
-    execute: async (message: Message, input?: string): Promise<boolean> => {
+    execute: async (message: Message, input?: string, serverSettings?: ServerSettings): Promise<boolean> => {
         const collection = await connectToCollection('user_shard_data', mongoClient);
         let userData: IShardData = await collection.findOne<IShardData>({ userID: message.author.id })
 

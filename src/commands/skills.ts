@@ -1,5 +1,5 @@
 import { CommandInteraction, Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, bold, ButtonStyle, SlashCommandBuilder, userMention, ChatInputCommandInteraction, ChannelType, MessageActionRowComponentBuilder } from 'discord.js';
-import { connectToCollection, fuzzySearch, IChampionInfo, canShow, inboxLinkButton, delayDeleteMessages, getSkillsEmbeds, skillsButtonPagination, removeShow } from '../general/util';
+import { connectToCollection, fuzzySearch, IChampionInfo, canShow, inboxLinkButton, delayDeleteMessages, getSkillsEmbeds, skillsButtonPagination, removeShow, ServerSettings } from '../general/util';
 import { logger, mongoClient } from '../arbi';
 
 export const registerforTesting = false;
@@ -12,12 +12,11 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .addBooleanOption(option => option
         .setDescription('Wether to show the command in the channel or not.')
         .setName('show_in_server')
-        .setRequired(false)
-    )
+        .setRequired(false)    )
     .setDescription('Search for champion information by name.')
-    .setDefaultPermission(true);
+    ;
 
-export async function execute(interaction:ChatInputCommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings): Promise<boolean> {
     await interaction.deferReply();
     try {
         let showInServer = interaction.options.getBoolean('show_in_server');

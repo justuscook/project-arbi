@@ -1,15 +1,14 @@
-import discord, { CommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import discord, { ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { logger } from '../arbi';
 import { IShardData, Mercy, msToTime } from '../general/IShardData';
-import { clipText, connectToCollection } from '../general/util';
+import { clipText, connectToCollection, ServerSettings } from '../general/util';
 import { topText } from '../arbi'
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
-    .setName('top')
-    .setDefaultPermission(true)
+    .setName('top')    
     .setDescription('Get the top 25 summoners leaderboard!');
-export async function execute(interaction: CommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings): Promise<boolean> {
     await interaction.deferReply();
 
     try {
@@ -20,7 +19,6 @@ export async function execute(interaction: CommandInteraction): Promise<boolean>
                         repliedUser: false
                     },
                     content: `This info is not gathered yet, try again in a few minutes.`
-
                 }
             )
             return true;

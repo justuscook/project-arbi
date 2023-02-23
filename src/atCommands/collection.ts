@@ -2,11 +2,11 @@ import { Message, ActionRowBuilder, ButtonBuilder, MessageComponentInteraction, 
 import { totalmem } from "os";
 import { mongoClient } from "../arbi";
 import { Champion, IShardData, msToTime } from "../general/IShardData";
-import { clipText, connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide, Timeout } from "../general/util";
+import { clipText, connectToCollection, fuzzySearch, getInput, ICommandInfo, IGuide, ServerSettings, Timeout } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'collection',
-    execute: async (message: Message, input?: string): Promise<boolean> => {
+    execute: async (message: Message, input?: string, serverSettings?: ServerSettings): Promise<boolean> => {
         try {
             const collection = await connectToCollection('user_shard_data', mongoClient);
             let userData: IShardData = await collection.findOne<IShardData>({ userID: message.author.id });

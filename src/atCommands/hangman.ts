@@ -1,6 +1,6 @@
 import { CollectorFilter, Interaction, Message, EmbedBuilder, MessageReaction, ReactionCollector, User, codeBlock } from "discord.js";
 import { IShardData, msToTime } from "../general/IShardData";
-import { getRandomIntInclusive, nonchachedImage } from "../general/util";
+import { getRandomIntInclusive, nonchachedImage, ServerSettings } from "../general/util";
 import { clipText, connectToCollection, fuzzySearch, getInput, getTop, IChampionInfo, ICommandInfo, IGuide } from "../general/util";
 import { mongoClient, topText } from '../arbi';
 
@@ -12,7 +12,7 @@ let channelsInUse: string[] = [];
 
 const commandFile: ICommandInfo = {
     name: 'hangman',
-    execute: async (message, input) => {
+    execute: async (message: Message, input?: string, serverSettings?: ServerSettings) => {
         try {
             //if (!channelsInUse.includes(message.channelId)) {
             //channelsInUse.push(message.channelId);
@@ -64,7 +64,7 @@ const commandFile: ICommandInfo = {
             const collector = game.createReactionCollector({ filter, time: 15 * 60 * 1000 });
             collector.on('collect', async (reaction, user) => {
                 const gameBoard = reaction.message;
-                const newEmbed = gameBoard.embeds[0];
+                const newEmbed = EmbedBuilder.from(gameBoard.embeds[0]);
                 if (reaction.emoji.name === '🛑') {
                     collector.stop();
                 }
@@ -77,26 +77,26 @@ const commandFile: ICommandInfo = {
                     guesses.push(guess);
                     regex = getMatchedRegEx(guesses);
                     wordFiltered = word.replace(regex, '_ ');
-                    newEmbed.fields[3].value = codeBlock(wordFiltered);
-                    newEmbed.fields.find(x => x.name === 'Guesses:').value = guesses.join(' ');
+                    newEmbed.data.fields[3].value = codeBlock(wordFiltered);
+                    newEmbed.data.fields.find(x => x.name === 'Guesses:').value = guesses.join(' ');
                     if (!word.toLocaleLowerCase().includes(guess)) {
                         if (!wrongGuesses.includes(guess)) {
                             wrongGuesses.push(guess);
                             if (wrongGuesses.length === 6) {
-                                newEmbed.description = codeBlock(wrongs[wrongGuesses.length]);
+                                newEmbed.setDescription(codeBlock(wrongs[wrongGuesses.length]));
                                 const collection = await connectToCollection('champion_info', mongoClient);
                                 const champs = await collection.find({}).toArray();
                                 const found = fuzzySearch(champs, word, ['name']);
-                                newEmbed.image = { url: `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${found[0].id - 6}.png${nonchachedImage()}` };
-                                newEmbed.addField('GAME OVER!', `💀🪢${message.author} you lost!💀🪢`);
+                                newEmbed.setImage(`https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${found[0].id - 6}.png${nonchachedImage()}`)
+                                newEmbed.addFields({ name: 'GAME OVER!', value: `💀🪢${message.author} you lost!💀🪢` });
                                 collector.stop();
-                                newEmbed.fields.find(x => x.name === 'Your word:').value = codeBlock(word);
+                                newEmbed.data.fields.find(x => x.name === 'Your word:').value = codeBlock(word);
                                 //channelsInUse = channelsInUse.filter(x => x === message.channelId)
                                 await gameBoard.edit({ embeds: [newEmbed] });
                                 return true;
                             }
                         }
-                        newEmbed.description = codeBlock(wrongs[wrongGuesses.length]);
+                        newEmbed.setDescription(codeBlock(wrongs[wrongGuesses.length]));
                     }
                     if (!wordFiltered.includes('_')) {
                         collector.stop();
@@ -106,7 +106,7 @@ const commandFile: ICommandInfo = {
                         const found = fuzzySearch(champs, word, ['name']);
                         const champImage = `https://raw.githubusercontent.com/justuscook/rsl-assets/master/RSL-Assets/HeroAvatarsWithBorders/${found[0].id - 6}.png${nonchachedImage()}`;
                         newEmbed.setImage(champImage);
-                        newEmbed.addField('GAME OVER!', `🎉💥${message.author} you won!🎉💥`);
+                        newEmbed.addFields({ name: 'GAME OVER!', value: `🎉💥${message.author} you won!🎉💥` });
                         collector.stop();
                         await gameBoard.edit({ embeds: [newEmbed] });
                         //channelsInUse = channelsInUse.filter(x => x !== message.channelId);
@@ -120,7 +120,7 @@ const commandFile: ICommandInfo = {
             });
             collector.on('end', async () => {
                 const gameBoard = collector.message;
-                const newEmbed = gameBoard.embeds[0].addField('🛑GAME STOPPED🛑', 'Thanks for playing,try again later!');
+                const newEmbed = EmbedBuilder.from(gameBoard.embeds[0]).addFields({name:'🛑GAME STOPPED🛑', value:'Thanks for playing,try again later!'});
                 await gameBoard.edit({ embeds: [newEmbed] });
                 //channelsInUse = channelsInUse.filter(x => x !== message.channelId);
                 return true;

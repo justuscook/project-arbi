@@ -1,12 +1,12 @@
-import discord, { CommandInteraction, EmbedBuilder, SlashCommandBuilder, Colors } from 'discord.js';
+import discord, { CommandInteraction, EmbedBuilder, SlashCommandBuilder, Colors, ChatInputCommandInteraction } from 'discord.js';
 import { logger } from '../arbi';
+import { ServerSettings } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('invite')
-    .setDefaultPermission(true)
     .setDescription('Invite Arbie to help you lookup Raid:SL character info and much more!');
-export async function execute(interaction: CommandInteraction) : Promise<boolean>{
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings) : Promise<boolean>{
     await interaction.deferReply();
     try {
         const embed: EmbedBuilder = new EmbedBuilder({

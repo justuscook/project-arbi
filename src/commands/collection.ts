@@ -1,14 +1,14 @@
-import { CommandInteraction, Message, ActionRowBuilder, ButtonBuilder, MessageComponentInteraction, EmbedBuilder, SlashCommandBuilder, Colors, ButtonStyle, MessageActionRowComponentBuilder, ButtonComponent, ComponentType, bold } from 'discord.js';
+import { CommandInteraction, Message, ActionRowBuilder, ButtonBuilder, MessageComponentInteraction, EmbedBuilder, SlashCommandBuilder, Colors, ButtonStyle, MessageActionRowComponentBuilder, ButtonComponent, ComponentType, bold, ChatInputCommandInteraction } from 'discord.js';
 import { mongoClient } from '../arbi';
 import { Champion, IShardData, msToTime } from '../general/IShardData';
-import { clipText, connectToCollection, Timeout } from '../general/util';
+import { clipText, connectToCollection, ServerSettings, Timeout } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('collection')
-    .setDefaultPermission(true)
+    
     .setDescription('Show off your champion collection from your bot summons!');
-export async function execute(interaction: CommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings): Promise<boolean> {
     await interaction.deferReply();
     try {
 

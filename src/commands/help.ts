@@ -1,6 +1,4 @@
 import { ButtonInteraction, CommandInteraction, Interaction, Message, ActionRowBuilder, ButtonBuilder, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, EmbedBuilder, bold, SlashCommandBuilder, userMention, ChatInputCommandInteraction } from 'discord.js';
-import { stringify } from 'querystring';
-import { inboxLinkButton } from '../general/util'
 import fs from 'fs';
 import * as util from '../general/util'
 import { client, logger } from '../arbi';
@@ -10,10 +8,10 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('help')
     .addStringOption(option => option.setName('command_name').setDescription('Command to get more info on.').setRequired(false))
     .setDescription('Look up available commands.  Include the command name to get more info about it.')
-    .setDefaultPermission(true)
+    
 
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: util.ServerSettings): Promise<boolean> {
     const input = interaction.options.getString('command_name');
     await interaction.deferReply();
     try {

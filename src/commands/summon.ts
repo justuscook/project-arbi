@@ -2,7 +2,7 @@ import discord, { CommandInteraction, EmbedField, Message, AttachmentBuilder, Em
 import { logger, mongoClient } from '../arbi';
 import { champsByRarity, createTenPullImage } from '../general/imageUtils';
 import { IChampPull, IShardData, Mercy, msToTime } from '../general/IShardData';
-import { clipText, connectToCollection, IChampionInfo } from '../general/util';
+import { clipText, connectToCollection, IChampionInfo, ServerSettings } from '../general/util';
 import { v1 as uuidv1 } from 'uuid';
 import { APIMessage } from 'discord-api-types/v10';
 
@@ -12,11 +12,10 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .addStringOption(option => option
         .setName('input')
         .setDescription(`Enter the shard type, then number of shards to open, example: ${bold('ancient 10')}.`)
-        .setRequired(true))
-    .setDefaultPermission(true)
+        .setRequired(true))    
     .setDescription('Simulate shard pulls with tokens you have gathered with /claim!');
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings): Promise<boolean> {
     await interaction.deferReply();
 
     let collection = await connectToCollection('user_shard_data', mongoClient);

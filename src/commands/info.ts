@@ -1,5 +1,5 @@
 import { CommandInteraction, Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, ChatInputCommandInteraction, bold, ButtonStyle, SlashCommandBuilder, userMention, MessageActionRowComponentBuilder, ChannelType } from 'discord.js';
-import { getColorByRarity, connectToCollection, fuzzySearch, getFactionImage, IChampionInfo, canShow, inboxLinkButton, delayDeleteMessages, getSkillsEmbeds, skillsButtonPagination, removeShow, nonchachedImage } from '../general/util';
+import { getColorByRarity, connectToCollection, fuzzySearch, getFactionImage, IChampionInfo, canShow, inboxLinkButton, delayDeleteMessages, getSkillsEmbeds, skillsButtonPagination, removeShow, nonchachedImage, ServerSettings } from '../general/util';
 import { logger, mongoClient } from '../arbi';
 
 export const registerforTesting = false
@@ -14,9 +14,9 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
         .setRequired(false)
     )
     .setDescription('Search for champion information by name.')
-    .setDefaultPermission(true);
+    ;
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings): Promise<boolean> {
     await interaction.deferReply();
     try {
         let showInServer = interaction.options.getBoolean('show_in_server');

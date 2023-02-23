@@ -26,7 +26,7 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
 */
     .setDescription('Search for guides by champion or dungeon name.')
 
-export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings: util.ServerSettings): Promise<boolean> {
     await interaction.deferReply();
     /*
     const commandText = await interaction.toString();
@@ -45,6 +45,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     let input: string = interaction.options.getString('input');
     let ogInput = input;
     let showInServer = interaction.options.getBoolean('show_in_server');
+
+    if(serverSettings.showInServer){
+        canShow = true;
+        showInServer = true;
+    }
+
     if (input === null) input = 'list';
     if (input.toLowerCase().includes('show')) {
         input = util.removeShow(input).trimEnd().trimStart();

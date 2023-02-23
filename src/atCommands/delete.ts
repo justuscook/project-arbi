@@ -1,10 +1,10 @@
 import { bold, Message, userMention } from "discord.js";
 import { mongoClient } from "../arbi";
-import { connectToCollection, getInput, ICommandInfo } from "../general/util";
+import { connectToCollection, getInput, ICommandInfo, ServerSettings } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'delete',
-    execute: async (message: Message, input?: string): Promise<boolean> => {
+    execute: async (message: Message, input?: string, serverSettings?: ServerSettings): Promise<boolean> => {
         const search = getInput(message.content);
         
         const collection = await connectToCollection('guides', mongoClient);

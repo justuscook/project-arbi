@@ -2,14 +2,13 @@
 import { CommandInteraction, ActionRowBuilder, EmbedBuilder, SlashCommandBuilder, SelectMenuBuilder, Colors, SelectMenuOptionBuilder, MessageActionRowComponentBuilder, ChatInputCommandInteraction, ComponentType} from 'discord.js';
 import { logger, mongoClient } from '../arbi';
 import { IBuffDebuff } from '../general/IBuffDebuff';
-import { clipText, connectToCollection, IChampionInfo } from '../general/util';
+import { clipText, connectToCollection, IChampionInfo, ServerSettings } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
-    .setName('skill_search')
-    .setDefaultPermission(true)
-    .setDescription('☣ IN TESTING ⚠ Search for buffs/debuffs and filter on skill numbers.');
-export async function execute(interaction: ChatInputCommandInteraction): Promise<boolean> {
+    .setName('skill_search')    
+    .setDescription('Search for buffs/debuffs and filter on skill numbers.');
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings): Promise<boolean> {
     await interaction.deferReply();
     try {
         const selectMenu = new ActionRowBuilder<MessageActionRowComponentBuilder>()

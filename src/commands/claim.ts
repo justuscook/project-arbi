@@ -1,14 +1,13 @@
-import { CommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { mongoClient } from '../arbi';
 import { IShardData, msToTime } from '../general/IShardData';
-import { connectToCollection } from '../general/util';
+import { connectToCollection, ServerSettings } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('claim')
-    .setDefaultPermission(true)
     .setDescription('Claim your daily tokens for summons!');
-export async function execute(interaction: CommandInteraction): Promise<boolean> {
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings): Promise<boolean> {
     await interaction.deferReply();
     
     const collection = await connectToCollection('user_shard_data', mongoClient);

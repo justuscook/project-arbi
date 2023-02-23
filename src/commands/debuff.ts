@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { logger, mongoClient } from '../arbi';
 import { IBuffDebuff } from '../general/IBuffDebuff';
-import { connectToCollection, fuzzySearch } from '../general/util';
+import { connectToCollection, fuzzySearch, ServerSettings } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
@@ -9,10 +9,9 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .addStringOption(option => option
         .setName('input')
         .setDescription('Enter the name of the buff/debuff you would like to search for.')
-        .setRequired(true))
-    .setDefaultPermission(true)    
+        .setRequired(true))        
     .setDescription('Search for a given buff/debuff definition from the in game FAQ.');
-export async function execute(interaction: ChatInputCommandInteraction) : Promise<boolean>{
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings) : Promise<boolean>{
     await interaction.deferReply();
     try {
         

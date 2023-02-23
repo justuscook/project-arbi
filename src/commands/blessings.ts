@@ -2,7 +2,7 @@
 import {  ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { logger, mongoClient } from '../arbi';
 import { IBuffDebuff } from '../general/IBuffDebuff';
-import { connectToCollection, fuzzySearch } from '../general/util';
+import { connectToCollection, fuzzySearch, ServerSettings } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
@@ -12,7 +12,7 @@ export const data: SlashCommandBuilder = new SlashCommandBuilder()
         .setDescription('Enter the name of the blessings you would like to search for.')
         .setRequired(true))
     .setDescription('Search for a given blessings definition.');
-export async function execute(interaction: ChatInputCommandInteraction) : Promise<boolean>{
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings) : Promise<boolean>{
     await interaction.deferReply();
     try {
         

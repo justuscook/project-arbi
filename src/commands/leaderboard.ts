@@ -1,14 +1,14 @@
-import discord, {  ButtonInteraction, CommandInteraction, Interaction, ActionRowBuilder, ButtonBuilder, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, EmbedBuilder,   SlashCommandBuilder } from 'discord.js';
+import discord, {  ButtonInteraction, CommandInteraction, Interaction, ActionRowBuilder, ButtonBuilder, MessageComponent, MessageComponentCollectorOptions, MessageComponentInteraction, EmbedBuilder,   SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { leaderboard, mongoClient } from '../arbi';
-import { connectToCollection, IGuide } from '../general/util';
+import { connectToCollection, IGuide, ServerSettings } from '../general/util';
 
 export const registerforTesting = false;
 export const data: SlashCommandBuilder = new SlashCommandBuilder()
     .setName('leaderboard')
     .setDescription('Gets the lastest leaderboard for guide submissions!')
-    .setDefaultPermission(true)
+    
 
-export async function execute(interaction: CommandInteraction) {
+export async function execute(interaction: ChatInputCommandInteraction, serverSettings?: ServerSettings) {
     await interaction.deferReply();
     
     const collection = await connectToCollection('guides', mongoClient);

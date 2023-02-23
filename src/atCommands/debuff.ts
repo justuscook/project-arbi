@@ -1,11 +1,11 @@
 import { Message, EmbedBuilder } from "discord.js";
 import { leaderboard, logger, mongoClient } from "../arbi";
 import { IBuffDebuff } from "../general/IBuffDebuff";
-import { connectToCollection, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide } from "../general/util";
+import { connectToCollection, fuzzySearch, getInput, getLeaderboard, ICommandInfo, IGuide, ServerSettings } from "../general/util";
 
 const commandFile: ICommandInfo = {
     name: 'debuff',
-    execute: async (message: Message, input?: string): Promise<boolean> => {
+    execute: async (message: Message, input?: string, serverSettings?: ServerSettings): Promise<boolean> => {
         try {
             
             const collection = await connectToCollection('buffs_debuffs', mongoClient);

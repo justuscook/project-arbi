@@ -1,5 +1,5 @@
 import { Client, ClientApplication, ColorResolvable, CommandInteraction, GuildMemberRoleManager, Message, ActionRowBuilder, AttachmentBuilder, ButtonBuilder, MessageComponentInteraction, EmbedBuilder, TextChannel, User, Colors, ButtonComponent, bold, MessageActionRowComponentBuilder } from "discord.js";
-import {ButtonStyle} from 'discord-api-types/v10'
+import { ButtonStyle } from 'discord-api-types/v10'
 import { google } from 'googleapis';
 import path from 'path';
 import Fuse from 'fuse.js';
@@ -7,8 +7,8 @@ import Axios from 'axios';
 import { v1 as uuidv1 } from 'uuid';
 import { TIMEOUT } from "dns";
 import { time } from "console";
-import { Db, MongoClient, Collection } from "mongodb";
 import { dbpass } from '../config.json';
+import { Db, MongoClient, Collection } from "mongodb";
 import { GaxiosResponse } from "gaxios";
 import { content } from "googleapis/build/src/apis/content";
 import { distance } from 'fastest-levenshtein';
@@ -249,9 +249,9 @@ export async function guideButtonPagination(buttonUserID: string, messages: Mess
         await messages[1].edit({ embeds: [embeds[parseInt(i.customId) - 1].midEmbed] });
         //await messages[2].edit({ embeds: [embeds[parseInt(i.customId) - 1].botEmbed]});
         //const rows = messages[2].components;
-        let rows : ActionRowBuilder<MessageActionRowComponentBuilder>[] = [];
+        let rows: ActionRowBuilder<MessageActionRowComponentBuilder>[] = [];
         for (const row of messages[2].components) {
-            let newRow:  ActionRowBuilder<MessageActionRowComponentBuilder> = new ActionRowBuilder();
+            let newRow: ActionRowBuilder<MessageActionRowComponentBuilder> = new ActionRowBuilder();
             for (let b of row.components) {
                 if (b.customId !== i.customId) {
                     //ActionRowBuilder.from(message.components[0]);
@@ -298,9 +298,9 @@ export async function skillsButtonPagination(buttonUserID: string, message: Mess
         await message.edit({ embeds: [embeds[parseInt(i.customId) - 1]] });
         //await messages[2].edit({ embeds: [embeds[parseInt(i.customId) - 1].botEmbed]});
         //const rows = message.components;
-        let rows : ActionRowBuilder<MessageActionRowComponentBuilder>[] = [];
+        let rows: ActionRowBuilder<MessageActionRowComponentBuilder>[] = [];
         for (const row of message.components) {
-            let newRow:  ActionRowBuilder<MessageActionRowComponentBuilder> = new ActionRowBuilder();
+            let newRow: ActionRowBuilder<MessageActionRowComponentBuilder> = new ActionRowBuilder();
             for (const b of row.components) {
                 if (b.customId !== i.customId) {
                     //ActionRowBuilder.from(message.components[0]);
@@ -581,6 +581,10 @@ export function validateGuide(guide: IGuide): string {
     return errors;
 }
 
+export interface ServerSettings{
+    showInServer: boolean
+}
+
 export interface IChampionInfo {
     name: string,
     key?: string,
@@ -849,50 +853,58 @@ export async function getTop(): Promise<string> {
     return top100Text;
 }
 export async function getLeaderboard(): Promise<Map<string, number>> {
+    try {
+        const collection = await connectToCollection('guides', mongoClient);
+        const guides = await collection.find<IGuide>({}).toArray();
 
-    const collection = await connectToCollection('guides', mongoClient);
-    const guides = await collection.find<IGuide>({}).toArray();
+        console.log(`Number of guides: ${guides.length}`);
+        let leaderboardByID: Map<string, number> = new Map<string, number>();
+        for (const g of guides) {
 
-    console.log(`Number of guides: ${guides.length}`);
-    let leaderboardByID: Map<string, number> = new Map<string, number>();
-    for (const g of guides) {
-        if (Array.isArray(g.author)) {
-            for (const a of g.author) {
-                if (leaderboardByID.has(a)) {
-                    leaderboardByID.set(a, leaderboardByID.get(a) + 1)
-                }
+            if (Array.isArray(g.author)) {
+                for (const a of g.author) {
+                    if (leaderboardByID.has(a)) {
+                        leaderboardByID.set(a, leaderboardByID.get(a) + 1)
+                    }
 
-                else {
-                    leaderboardByID.set(a, 1);
+                    else {
+                        leaderboardByID.set(a, 1);
+                    }
                 }
             }
-        }
-        else {
-            if (leaderboardByID.has(g.author)) {
-                leaderboardByID.set(g.author, leaderboardByID.get(g.author) + 1)
+            else {
+                if (leaderboardByID.has(g.author)) {
+                    leaderboardByID.set(g.author, leaderboardByID.get(g.author) + 1)
+                }
+
+                else leaderboardByID.set(g.author, 1);
             }
-
-            else leaderboardByID.set(g.author, 1);
         }
-    }
-    let leaderboardByUserName: Map<string, number> = new Map<string, number>();
-    const sorted = (new Map([...leaderboardByID.entries()].sort((a, b) => b[1] - a[1])));
-    console.log(`Sorted:\n${sorted}`)
-    for (const s of sorted) {
-        let user: User = await client.users.fetch(s[0]);
-        leaderboardByUserName.set(`${user.username}#${user.discriminator}`, s[1])
-    }
 
 
-    /*
-    leaderboardByID.forEach(async (v,k) => {
-        const user: User = await client.users.fetch(k);
-        console.log(k);
-        leaderboardByUserName.set(`${user.username}#${user.discriminator}`,v)
-    })*/
-    console.log(leaderboardByUserName);
-    return leaderboardByUserName;
+        let leaderboardByUserName: Map<string, number> = new Map<string, number>();
+        const sorted = (new Map([...leaderboardByID.entries()].sort((a, b) => b[1] - a[1])));
+        console.log(`Sorted:\n${sorted}`)
+        for (const s of sorted) {
+            let user: User = await client.users.fetch(s[0]);
+            leaderboardByUserName.set(`${user.username}#${user.discriminator}`, s[1])
+        }
+
+
+        /*
+        leaderboardByID.forEach(async (v,k) => {
+            const user: User = await client.users.fetch(k);
+            console.log(k);
+            leaderboardByUserName.set(`${user.username}#${user.discriminator}`,v)
+        })*/
+        console.log(leaderboardByUserName);
+        return leaderboardByUserName;
+    }
+    catch (error) {
+        console.log(error)
+    }
 }
+
 
 export function getUserInput(data: string): string {
     let inputArray = data.split('>')
